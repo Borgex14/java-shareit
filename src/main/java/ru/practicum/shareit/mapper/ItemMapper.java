@@ -15,7 +15,7 @@ public class ItemMapper {
                 item.getName(),
                 item.getDescription(),
                 item.isAvailable(),
-                item.getOwner(),
+                item.getOwnerId(),
                 item.getRequest()
         );
     }
