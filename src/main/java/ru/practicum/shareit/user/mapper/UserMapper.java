@@ -3,7 +3,6 @@ package ru.practicum.shareit.user.mapper;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.dto.UserCreateDto;
-import ru.practicum.shareit.user.dto.UserUpdateDto;
 
 public class UserMapper {
 
@@ -26,17 +25,5 @@ public class UserMapper {
             return null;
         }
         return new User(null, createDto.getName(), createDto.getEmail());
-    }
-
-    public static void updateEntityFromDto(UserUpdateDto updateDto, User user) {
-        if (updateDto == null || user == null) {
-            return;
-        }
-        if (updateDto.getName() != null) {
-            user.setName(updateDto.getName());
-        }
-        if (updateDto.getEmail() != null) {
-            user.setEmail(updateDto.getEmail());
-        }
     }
 }
