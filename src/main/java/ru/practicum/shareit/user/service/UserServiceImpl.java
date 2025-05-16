@@ -1,64 +1,65 @@
 package ru.practicum.shareit.user.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.dto.UserCreateDto;
 import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
+import ru.practicum.shareit.user.storage.UserStorage;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class UserServiceImpl implements UserService {
 
-    private final Map<Long, User> users = new ConcurrentHashMap<>();
-    private long idCounter = 1L; // для генерации ID
+    private final UserStorage userStorage;
 
-    @Override
-    public synchronized UserDto createUser(UserCreateDto createDto) {
-        Long id = idCounter++;
-        User user = new User();
-        user.setId(String.valueOf(id));
-        user.setName(createDto.getName());
-        user.setEmail(createDto.getEmail());
-        users.put(id, user);
-        return UserMapper.toDto(user);
+    @Autowired
+    public UserServiceImpl(UserStorage userStorage) {
+        this.userStorage = userStorage;
     }
 
     @Override
-    public synchronized UserDto updateUser(Long userId, UserCreateDto updateDto) {
-        User existing = users.get(userId);
-        if (existing == null) {
-            throw new NoSuchElementException("Пользователь не найден");
-        }
+    public UserDto createUser(UserCreateDto createDto) {
+        User user = new User();
+        user.setName(createDto.getName());
+        user.setEmail(createDto.getEmail());
+        User createdUser = userStorage.create(user);
+        return UserMapper.toDto(createdUser);
+    }
+
+    @Override
+    public UserDto updateUser(Long userId, UserCreateDto updateDto) {
+        User existingUser = userStorage.findById(userId);
+
         if (updateDto.getName() != null) {
-            existing.setName(updateDto.getName());
+            existingUser.setName(updateDto.getName());
         }
         if (updateDto.getEmail() != null) {
-            existing.setEmail(updateDto.getEmail());
+            existingUser.setEmail(updateDto.getEmail());
         }
-        return UserMapper.toDto(existing);
+
+        User updatedUser = userStorage.updateUser(userId, existingUser);
+        return UserMapper.toDto(updatedUser);
     }
 
     @Override
     public UserDto getUser(Long userId) {
-        User user = users.get(userId);
-        if (user == null) {
-            throw new NoSuchElementException("Пользователь не найден");
-        }
+        User user = userStorage.findById(userId);
         return UserMapper.toDto(user);
     }
 
     @Override
     public List<UserDto> getAllUsers() {
-        return users.values().stream()
+        return userStorage.findAll().stream()
                 .map(UserMapper::toDto)
-                .toList();
+                .collect(Collectors.toList());
     }
 
     @Override
     public void deleteUser(Long userId) {
-        users.remove(userId);
+        userStorage.delete(userId);
     }
 }
