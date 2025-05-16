@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.item.dto.ItemCreateDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.service.ItemService;
+import ru.practicum.shareit.user.model.User;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -22,7 +23,7 @@ public class ItemController {
     }
 
     @PostMapping
-    public ResponseEntity<ItemDto> addItem(@RequestHeader("X-Sharer-User-Id") Long userId,
+    public ResponseEntity<ItemDto> addItem(@RequestHeader("X-Sharer-User-Id") User userId,
                                            @RequestBody ItemCreateDto createDto) {
         return ResponseEntity.ok(itemService.addItem(userId, createDto));
     }
@@ -49,7 +50,7 @@ public class ItemController {
 
     @GetMapping
     public ResponseEntity<List<ItemDto>> getOwnerItems(@RequestHeader("X-Sharer-User-Id") Long userId) {
-        List<ItemDto> items = itemService.getItemsByOwner(userId);
+        List<ItemDto> items = itemService.getItemsByOwnerId(userId);
         return ResponseEntity.ok(items);
     }
 

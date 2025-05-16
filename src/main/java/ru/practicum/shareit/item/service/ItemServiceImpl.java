@@ -5,6 +5,7 @@ import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemCreateDto;
 import ru.practicum.shareit.mapper.ItemMapper;
 import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.user.model.User;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,14 +18,14 @@ public class ItemServiceImpl implements ItemService {
     private long idCounter = 1L; // для генерации ID
 
     @Override
-    public synchronized ItemDto addItem(Long ownerId, ItemCreateDto createDto) {
+    public synchronized ItemDto addItem(User owner, ItemCreateDto createDto) {
         Long id = idCounter++;
         Item item = new Item();
-        item.setId(String.valueOf(id));
+        item.setId(id);
         item.setName(createDto.getName());
         item.setDescription(createDto.getDescription());
         item.setAvailable(createDto.isAvailable());
-        item.setOwnerId(String.valueOf(ownerId));
+        item.setOwner(owner);
         items.put(id, item);
         return ItemMapper.toDto(item);
     }
@@ -45,7 +46,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public List<ItemDto> getItemsByOwner(Long ownerId) {
+    public List<ItemDto> getItemsByOwnerId(Long ownerId) {
         return items.values().stream()
                 .filter(i -> false)
                 .map(ItemMapper::toDto)
