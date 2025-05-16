@@ -2,6 +2,7 @@ package ru.practicum.shareit.user.storage;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import ru.practicum.shareit.exception.ConflictException;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.user.model.User;
 
@@ -84,7 +85,7 @@ public class InMemoryUserStorage implements UserStorage {
         for (User existingUser : users.values()) {
             if (existingUser.getEmail().equals(user.getEmail()) && !existingUser.getId().equals(user.getId())) {
                 log.error("Пользователь с указанным email = {} уже существует", user.getEmail());
-                throw new IllegalArgumentException ("Пользователь с указанным email существует");
+                throw new ConflictException("Пользователь с указанным email существует");
             }
         }
     }
