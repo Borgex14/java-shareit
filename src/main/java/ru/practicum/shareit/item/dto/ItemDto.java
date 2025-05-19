@@ -12,7 +12,6 @@ import ru.practicum.shareit.user.model.User;
 @Data
 @AllArgsConstructor
 public class ItemDto {
-}
     private Long id;
     @NotBlank
     private String name;
