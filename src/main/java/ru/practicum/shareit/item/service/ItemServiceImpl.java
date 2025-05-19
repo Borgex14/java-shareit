@@ -29,17 +29,18 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public synchronized ItemDto addItem(Long userId, ItemCreateDto createDto) {
+        User user = UserMapper.toEntity(userService.getUser(userId));
+        if (user == null) {
+            throw new NotFoundException("Пользователь не найден");
+        }
+
         Long id = idCounter++;
         Item item = new Item();
         item.setId(id);
         item.setName(createDto.getName());
         item.setDescription(createDto.getDescription());
-        item.setAvailable(createDto.isAvailable());
-        User owner = UserMapper.toEntity(userService.getUser(userId));
-        if (owner == null) {
-            throw new NotFoundException("Пользователь не найден");
-        }
-        item.setOwner(owner);
+        item.setAvailable(createDto.getAvailable());
+        item.setOwner(user);
         items.put(id, item);
         return toDto(item);
     }
@@ -66,8 +67,8 @@ public class ItemServiceImpl implements ItemService {
             isUpdated = true;
         }
 
-        if (!updateDto.isAvailable()) {
-            existing.setAvailable(updateDto.isAvailable());
+        if (updateDto.getAvailable() != null) {
+            existing.setAvailable(updateDto.getAvailable());
             isUpdated = true;
         }
 
@@ -90,16 +91,19 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public List<ItemDto> getItemsByOwnerId(Long ownerId) {
         return items.values().stream()
-                .filter(i -> false)
+                .filter(i -> i.getOwner() != null && i.getOwner().getId().equals(ownerId))
                 .map(ItemMapper::toDto)
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<ItemDto> searchItems(String text) {
+        if (text == null || text.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
         String lowerText = text.toLowerCase();
         return items.values().stream()
-                .filter(i -> i.isAvailable() &&
+                .filter(i -> i.getAvailable() &&
                         (i.getName().toLowerCase().contains(lowerText) ||
                                 i.getDescription().toLowerCase().contains(lowerText)))
                 .map(ItemMapper::toDto)

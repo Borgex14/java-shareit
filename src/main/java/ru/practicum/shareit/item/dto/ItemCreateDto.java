@@ -7,12 +7,12 @@ import ru.practicum.shareit.user.model.User;
 
 @Data
 public class ItemCreateDto {
-    @NotBlank
+    @NotBlank(message = "Название не может быть пустым")
     private String name;
-    @NotBlank
+    @NotBlank(message = "Описание не может быть пустым")
     private String description;
-    @NotNull
-    private boolean available;
+    @NotNull(message = "Доступность должна быть указана")
+    private Boolean available;
     private User owner;
     private String request;
 }

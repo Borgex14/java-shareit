@@ -1,12 +1,12 @@
 package ru.practicum.shareit.item.controller;
 
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.item.dto.ItemCreateDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.service.ItemService;
-import ru.practicum.shareit.user.model.User;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -24,8 +24,9 @@ public class ItemController {
 
     @PostMapping
     public ResponseEntity<ItemDto> addItem(@RequestHeader("X-Sharer-User-Id") Long userId,
-                                           @RequestBody ItemCreateDto createDto) {
-        return ResponseEntity.ok(itemService.addItem(userId, createDto));
+                                           @Valid @RequestBody ItemCreateDto createDto) {
+        ItemDto itemDto = itemService.addItem(userId, createDto);
+        return ResponseEntity.ok(itemDto);
     }
 
     @PatchMapping("/{itemId}")
