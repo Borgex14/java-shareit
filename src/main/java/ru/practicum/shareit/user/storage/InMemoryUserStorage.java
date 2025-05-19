@@ -22,13 +22,11 @@ public class InMemoryUserStorage implements UserStorage {
     public User create(User user) {
         log.info("Создание нового пользователя = {}", user);
         emailCheck(user);
-
         long id = generateId();
         User newUser = new User();
         newUser.setId(id);
         newUser.setName(user.getName());
         newUser.setEmail(user.getEmail());
-
         users.put(id, newUser);
         return newUser;
     }
@@ -37,12 +35,10 @@ public class InMemoryUserStorage implements UserStorage {
     public User updateUser(Long id, User user) {
         log.info("Обновление пользователя с id = {}", id);
         emailCheck(user);
-
         if (!users.containsKey(id)) {
             log.error("Обновляемый пользователь не существует");
             throw new NotFoundException("Обновляемый пользователь не существует");
         }
-
         User existingUser = users.get(id);
         if (user.getName() != null) {
             existingUser.setName(user.getName());
@@ -50,8 +46,8 @@ public class InMemoryUserStorage implements UserStorage {
         if (user.getEmail() != null) {
             existingUser.setEmail(user.getEmail());
         }
-
         users.put(id, existingUser);
+
         return existingUser;
     }
 
@@ -74,6 +70,7 @@ public class InMemoryUserStorage implements UserStorage {
         if (user == null) {
             throw new NotFoundException("Пользователь с id = " + id + " не существует");
         }
+
         return user;
     }
 

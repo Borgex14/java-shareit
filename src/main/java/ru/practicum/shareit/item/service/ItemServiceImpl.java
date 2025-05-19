@@ -51,6 +51,7 @@ public class ItemServiceImpl implements ItemService {
         if (existing == null) {
             throw new NoSuchElementException("Вещь не найдена");
         }
+
         if (!existing.getOwner().getId().equals(ownerId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Нет прав на изменение этой вещи");
         }
@@ -85,6 +86,7 @@ public class ItemServiceImpl implements ItemService {
         if (item == null) {
             throw new NoSuchElementException("Вещь не найдена");
         }
+
         return toDto(item);
     }
 
@@ -102,6 +104,7 @@ public class ItemServiceImpl implements ItemService {
             return Collections.emptyList();
         }
         String lowerText = text.toLowerCase();
+
         return items.values().stream()
                 .filter(i -> i.getAvailable() &&
                         (i.getName().toLowerCase().contains(lowerText) ||

@@ -40,7 +40,6 @@ public class UserServiceImpl implements UserService {
         if (updateDto.getEmail() != null) {
             existingUser.setEmail(updateDto.getEmail());
         }
-
         User updatedUser = userStorage.updateUser(userId, existingUser);
         return UserMapper.toDto(updatedUser);
     }
