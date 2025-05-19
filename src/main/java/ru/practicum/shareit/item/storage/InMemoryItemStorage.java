@@ -1,9 +1,14 @@
 package ru.practicum.shareit.item.storage;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
+import ru.practicum.shareit.user.service.UserService;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -13,6 +18,8 @@ import java.util.stream.Collectors;
 @Component("itemMemoryStorage")
 public class InMemoryItemStorage implements ItemStorage {
 
+    @Autowired
+    private UserService userService;
     private final Map<Long, Item> items = new HashMap<>();
     private final AtomicLong idGenerator = new AtomicLong(1);
 
@@ -21,10 +28,14 @@ public class InMemoryItemStorage implements ItemStorage {
     }
 
     @Override
-    public Item addItem(User owner, Item item) {
+    public Item addItem(@NotNull Long userId, Item item) {
         log.info("Добавление новой вещи: {}", item);
         long id = generateId();
         item.setId(id);
+        User owner = UserMapper.toEntity(userService.getUser(userId));
+        if (owner == null) {
+            throw new NotFoundException("Пользователь не найден");
+        }
         item.setOwner(owner);
         items.put(id, item);
         return item;

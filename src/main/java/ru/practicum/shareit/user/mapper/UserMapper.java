@@ -4,6 +4,7 @@ import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.dto.UserCreateDto;
 
+
 public class UserMapper {
 
     public static UserDto toDto(User user) {

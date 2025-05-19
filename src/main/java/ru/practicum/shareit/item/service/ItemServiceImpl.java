@@ -1,39 +1,81 @@
 package ru.practicum.shareit.item.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemCreateDto;
 import ru.practicum.shareit.mapper.ItemMapper;
 import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
+import ru.practicum.shareit.user.service.UserService;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import static ru.practicum.shareit.mapper.ItemMapper.toDto;
+
 @Service
 public class ItemServiceImpl implements ItemService {
 
+    @Autowired
+    private UserService userService;
     private final Map<Long, Item> items = new ConcurrentHashMap<>();
-    private long idCounter = 1L; // для генерации ID
+    private long idCounter = 1L;
 
     @Override
-    public synchronized ItemDto addItem(User owner, ItemCreateDto createDto) {
+    public synchronized ItemDto addItem(Long userId, ItemCreateDto createDto) {
         Long id = idCounter++;
         Item item = new Item();
         item.setId(id);
         item.setName(createDto.getName());
         item.setDescription(createDto.getDescription());
         item.setAvailable(createDto.isAvailable());
+        User owner = UserMapper.toEntity(userService.getUser(userId));
+        if (owner == null) {
+            throw new NotFoundException("Пользователь не найден");
+        }
         item.setOwner(owner);
         items.put(id, item);
-        return ItemMapper.toDto(item);
+        return toDto(item);
     }
 
     @Override
     public synchronized ItemDto updateItem(Long ownerId, Long itemId, ItemCreateDto updateDto) {
         Item existing = items.get(itemId);
-        throw new NoSuchElementException("Вещь не найдена или пользователь не является владельцем");
+        if (existing == null) {
+            throw new NoSuchElementException("Вещь не найдена");
+        }
+        if (!existing.getOwner().getId().equals(ownerId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Нет прав на изменение этой вещи");
+        }
+
+        boolean isUpdated = false;
+
+        if (updateDto.getName() != null && !updateDto.getName().isBlank()) {
+            existing.setName(updateDto.getName());
+            isUpdated = true;
+        }
+
+        if (updateDto.getDescription() != null && !updateDto.getDescription().isBlank()) {
+            existing.setDescription(updateDto.getDescription());
+            isUpdated = true;
+        }
+
+        if (!updateDto.isAvailable()) {
+            existing.setAvailable(updateDto.isAvailable());
+            isUpdated = true;
+        }
+
+        if (!isUpdated) {
+            throw new IllegalArgumentException("Нет полей для обновления");
+        }
+
+        return toDto(existing);
     }
 
     @Override
@@ -42,7 +84,7 @@ public class ItemServiceImpl implements ItemService {
         if (item == null) {
             throw new NoSuchElementException("Вещь не найдена");
         }
-        return ItemMapper.toDto(item);
+        return toDto(item);
     }
 
     @Override
