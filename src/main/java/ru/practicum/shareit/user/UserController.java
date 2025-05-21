@@ -10,7 +10,6 @@ import ru.practicum.shareit.user.dto.UserCreateDto;
 import ru.practicum.shareit.user.service.UserService;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/users")
@@ -36,21 +35,13 @@ public class UserController {
 
     @GetMapping("/{userId}")
     public ResponseEntity<UserDto> getUser(@PathVariable Long userId) {
-        try {
-            return ResponseEntity.ok(userService.getUser(userId));
-        } catch (NoSuchElementException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(userService.getUser(userId));
     }
 
     @PatchMapping("/{userId}")
     public ResponseEntity<UserDto> updateUser(@PathVariable Long userId,
                                               @RequestBody UserCreateDto updateDto) {
-        try {
-            return ResponseEntity.ok(userService.updateUser(userId, updateDto));
-        } catch (NoSuchElementException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(userService.updateUser(userId, updateDto));
     }
 
     @DeleteMapping("/{userId}")

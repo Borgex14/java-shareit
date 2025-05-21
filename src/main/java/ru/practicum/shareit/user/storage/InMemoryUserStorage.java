@@ -23,12 +23,9 @@ public class InMemoryUserStorage implements UserStorage {
         log.info("Создание нового пользователя = {}", user);
         emailCheck(user);
         long id = generateId();
-        User newUser = new User();
-        newUser.setId(id);
-        newUser.setName(user.getName());
-        newUser.setEmail(user.getEmail());
-        users.put(id, newUser);
-        return newUser;
+        user.setId(id);
+        users.put(id, user);
+        return user;
     }
 
     @Override
@@ -36,7 +33,7 @@ public class InMemoryUserStorage implements UserStorage {
         log.info("Обновление пользователя с id = {}", id);
         emailCheck(user);
         if (!users.containsKey(id)) {
-            log.error("Обновляемый пользователь не существует");
+            log.error("Обновляемый пользователь с id = {} не существует", id);
             throw new NotFoundException("Обновляемый пользователь не существует");
         }
         User existingUser = users.get(id);

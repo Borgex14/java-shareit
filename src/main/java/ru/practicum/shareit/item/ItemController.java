@@ -9,7 +9,6 @@ import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.service.ItemService;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/items")
@@ -25,28 +24,19 @@ public class ItemController {
     @PostMapping
     public ResponseEntity<ItemDto> addItem(@RequestHeader("X-Sharer-User-Id") Long userId,
                                            @Valid @RequestBody ItemCreateDto createDto) {
-        ItemDto itemDto = itemService.addItem(userId, createDto);
-        return ResponseEntity.ok(itemDto);
+        return ResponseEntity.ok(itemService.addItem(userId, createDto));
     }
 
     @PatchMapping("/{itemId}")
     public ResponseEntity<ItemDto> updateItem(@RequestHeader("X-Sharer-User-Id") Long userId,
                                               @PathVariable Long itemId,
                                               @RequestBody ItemCreateDto updateDtos) {
-        try {
-            return ResponseEntity.ok(itemService.updateItem(userId, itemId, updateDtos));
-        } catch (NoSuchElementException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(itemService.updateItem(userId, itemId, updateDtos));
     }
 
     @GetMapping("/{itemId}")
     public ResponseEntity<ItemDto> getItem(@PathVariable Long itemId) {
-        try {
-            return ResponseEntity.ok(itemService.getItem(itemId));
-        } catch (NoSuchElementException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(itemService.getItem(itemId));
     }
 
     @GetMapping

@@ -18,8 +18,6 @@ import java.util.stream.Collectors;
 @Component("itemMemoryStorage")
 public class InMemoryItemStorage implements ItemStorage {
 
-    @Autowired
-    private UserService userService;
     private final Map<Long, Item> items = new HashMap<>();
     private final AtomicLong idGenerator = new AtomicLong(1);
 
@@ -32,11 +30,6 @@ public class InMemoryItemStorage implements ItemStorage {
         log.info("Добавление новой вещи: {}", item);
         long id = generateId();
         item.setId(id);
-        User owner = UserMapper.toEntity(userService.getUser(userId));
-        if (owner == null) {
-            throw new NotFoundException("Пользователь не найден");
-        }
-        item.setOwner(owner);
         items.put(id, item);
         return item;
     }
@@ -69,7 +62,7 @@ public class InMemoryItemStorage implements ItemStorage {
     public List<Item> getItemsByOwnerId(Long ownerId) {
         log.info("Поиск вещей владельца с id = {}", ownerId);
         return items.values().stream()
-                .filter(item -> false)
+                .filter(item -> item.getOwner().getId().equals(ownerId))
                 .collect(Collectors.toList());
     }
 

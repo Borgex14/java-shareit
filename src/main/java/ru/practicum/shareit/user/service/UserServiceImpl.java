@@ -23,9 +23,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDto createUser(UserCreateDto createDto) {
-        User user = new User();
-        user.setName(createDto.getName());
-        user.setEmail(createDto.getEmail());
+        User user = UserMapper.fromCreateDto(createDto);
         User createdUser = userStorage.create(user);
         return UserMapper.toDto(createdUser);
     }
