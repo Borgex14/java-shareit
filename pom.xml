@@ -85,9 +85,9 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.13.0</version>
+				<version>3.10.1</version>
 				<configuration>
-					<release>21</release> <!-- или source/target -->
+					<release>21</release>
 					<compilerArgs>
 						<arg>--enable-preview</arg>
 					</compilerArgs>
@@ -103,6 +103,14 @@
 						<systemPropertyVariables>
 							<spring.profiles.active>test</spring.profiles.active>
 						</systemPropertyVariables>
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-surefire-plugin</artifactId>
+					<version>3.0.0-M5</version>
+					<configuration>
+						<argLine>--enable-preview</argLine>
 					</configuration>
 				</plugin>
 				<plugin>
