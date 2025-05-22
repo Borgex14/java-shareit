@@ -24,10 +24,10 @@ public class ItemServiceImpl implements ItemService {
     @Autowired
     private ItemStorage itemStorage;
 
-    private Item findItemById(Long itemId) {
+    private Item findItemById(Long itemId) throws NotFoundException {
         Item item = itemStorage.getItem(itemId);
         if (item == null) {
-            throw new NotFoundException(STR."Вещь с id \{itemId} не найдена");
+            throw new NotFoundException("Вещь с id " + itemId + " не найдена");
         }
         return item;
     }
