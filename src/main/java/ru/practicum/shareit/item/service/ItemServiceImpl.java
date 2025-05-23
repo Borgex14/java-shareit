@@ -35,10 +35,6 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public synchronized ItemDto addItem(Long userId, ItemCreateDto createDto) {
         User user = userStorage.findById(userId);
-        if (user == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "Пользователь не найден");
-        }
         Item item = ItemMapper.fromCreateDto(createDto);
         item.setOwner(user);
         Item savedItem = itemStorage.addItem(userId, item);
@@ -98,14 +94,8 @@ public class ItemServiceImpl implements ItemService {
         if (text == null || text.trim().isEmpty()) {
             return Collections.emptyList();
         }
-        String lowerText = text.toLowerCase();
-
         List<Item> itemsFromStorage = itemStorage.searchItems(text);
-
         return itemsFromStorage.stream()
-                .filter(i -> i.getAvailable() &&
-                        (i.getName() != null && i.getName().toLowerCase().contains(lowerText) ||
-                                i.getDescription() != null && i.getDescription().toLowerCase().contains(lowerText)))
                 .map(ItemMapper::toDto)
                 .collect(Collectors.toList());
     }

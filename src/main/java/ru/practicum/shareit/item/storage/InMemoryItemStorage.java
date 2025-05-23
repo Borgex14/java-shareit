@@ -66,7 +66,7 @@ public class InMemoryItemStorage implements ItemStorage {
         String lowerText = text.toLowerCase();
         log.info("Поиск вещей по тексту: {}", text);
         return items.values().stream()
-                .filter(item -> (item.getName() != null && item.getName().toLowerCase().contains(lowerText))
+                .filter(item -> item.getAvailable() && (item.getName() != null && item.getName().toLowerCase().contains(lowerText))
                         || (item.getDescription() != null && item.getDescription().toLowerCase().contains(lowerText)))
                 .collect(Collectors.toList());
     }
