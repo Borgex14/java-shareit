@@ -1,54 +1,76 @@
 package ru.practicum.shareit.item.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemCreateDto;
-import ru.practicum.shareit.item.storage.ItemStorage;
 import ru.practicum.shareit.item.mapper.ItemMapper;
 import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.user.model.User;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
-import ru.practicum.shareit.user.storage.UserStorage;
+import ru.practicum.shareit.user.repository.UserRepository;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional(readOnly = true)
 public class ItemServiceImpl implements ItemService {
 
-    @Autowired
-    private UserStorage userStorage;
-    @Autowired
-    private ItemStorage itemStorage;
+    private final ItemRepository itemRepository;
+    private final UserRepository userRepository;
 
-    private Item findItemById(Long itemId) throws NotFoundException {
-        Item item = itemStorage.getItem(itemId);
-        if (item == null) {
-            throw new NotFoundException("Вещь с id " + itemId + " не найдена");
-        }
-        return item;
+    @Autowired
+    public ItemServiceImpl(ItemRepository itemRepository, UserRepository userRepository) {
+        this.itemRepository = itemRepository;
+        this.userRepository = userRepository;
+    }
+
+    private Item findItemById(Long itemId) {
+        return itemRepository.findById(itemId)
+                .orElseThrow(() -> new NotFoundException("Вещь с id " + itemId + " не найдена"));
     }
 
     @Override
-    public synchronized ItemDto addItem(Long userId, ItemCreateDto createDto) {
-        User user = userStorage.findById(userId);
+    @Transactional
+    public ItemDto addItem(Long userId, ItemCreateDto createDto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь с id " + userId + " не найден"));
+
         Item item = ItemMapper.fromCreateDto(createDto);
         item.setOwner(user);
-        Item savedItem = itemStorage.addItem(userId, item);
+
+        // Проверка обязательных полей
+        if (item.getName() == null || item.getName().isBlank()) {
+            throw new IllegalArgumentException("Название вещи не может быть пустым");
+        }
+        if (item.getDescription() == null || item.getDescription().isBlank()) {
+            throw new IllegalArgumentException("Описание вещи не может быть пустым");
+        }
+        if (item.getAvailable() == null) {
+            throw new IllegalArgumentException("Статус доступности вещи должен быть указан");
+        }
+
+        Item savedItem = itemRepository.save(item);
         return ItemMapper.toDto(savedItem);
     }
 
     @Override
-    public synchronized ItemDto updateItem(Long ownerId, Long itemId, ItemCreateDto updateDto) {
+    @Transactional
+    public ItemDto updateItem(Long ownerId, Long itemId, ItemCreateDto updateDto) {
         Item existingItem = findItemById(itemId);
 
+        // Проверка прав владельца
         if (!existingItem.getOwner().getId().equals(ownerId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Нет прав на изменение этой вещи");
         }
 
+        // Обновление полей
         boolean isUpdated = false;
 
         if (updateDto.getName() != null && !updateDto.getName().isBlank()) {
@@ -66,36 +88,42 @@ public class ItemServiceImpl implements ItemService {
             isUpdated = true;
         }
 
-        itemStorage.updateItem(ownerId, itemId, existingItem);
-
         if (!isUpdated) {
             throw new IllegalArgumentException("Нет полей для обновления");
         }
 
-        return ItemMapper.toDto(existingItem);
+        Item updatedItem = itemRepository.save(existingItem);
+        return ItemMapper.toDto(updatedItem);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ItemDto getItem(Long itemId) {
         Item item = findItemById(itemId);
         return ItemMapper.toDto(item);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ItemDto> getItemsByOwnerId(Long ownerId) {
-        List<Item> items = itemStorage.getItemsByOwnerId(ownerId);
-        return items.stream()
+        // Проверка существования пользователя
+        if (!userRepository.existsById(ownerId)) {
+            throw new NotFoundException("Пользователь с id " + ownerId + " не найден");
+        }
+
+        return itemRepository.findByOwnerId(ownerId).stream()
                 .map(ItemMapper::toDto)
                 .collect(Collectors.toList());
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ItemDto> searchItems(String text) {
         if (text == null || text.trim().isEmpty()) {
             return Collections.emptyList();
         }
-        List<Item> itemsFromStorage = itemStorage.searchItems(text);
-        return itemsFromStorage.stream()
+
+        return itemRepository.searchAvailableItems(text.toLowerCase()).stream()
                 .map(ItemMapper::toDto)
                 .collect(Collectors.toList());
     }
