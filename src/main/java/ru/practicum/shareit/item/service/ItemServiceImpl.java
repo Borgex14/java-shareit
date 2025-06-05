@@ -13,7 +13,11 @@ import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
+import ru.practicum.shareit.booking.BookingStatus;
+import ru.practicum.shareit.booking.repository.BookingRepository;
+import ru.practicum.shareit.booking.dto.BookingShortDto;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,11 +28,13 @@ public class ItemServiceImpl implements ItemService {
 
     private final ItemRepository itemRepository;
     private final UserRepository userRepository;
+    private final BookingRepository bookingRepository;
 
     @Autowired
-    public ItemServiceImpl(ItemRepository itemRepository, UserRepository userRepository) {
+    public ItemServiceImpl(ItemRepository itemRepository, UserRepository userRepository, BookingRepository bookingRepository) {
         this.itemRepository = itemRepository;
         this.userRepository = userRepository;
+        this.bookingRepository = bookingRepository;
     }
 
     private Item findItemById(Long itemId) {
@@ -45,7 +51,6 @@ public class ItemServiceImpl implements ItemService {
         Item item = ItemMapper.fromCreateDto(createDto);
         item.setOwner(user);
 
-        // Проверка обязательных полей
         if (item.getName() == null || item.getName().isBlank()) {
             throw new IllegalArgumentException("Название вещи не может быть пустым");
         }
@@ -57,7 +62,7 @@ public class ItemServiceImpl implements ItemService {
         }
 
         Item savedItem = itemRepository.save(item);
-        return ItemMapper.toDto(savedItem);
+        return ItemMapper.toDto(savedItem, null, null);
     }
 
     @Override
@@ -65,12 +70,10 @@ public class ItemServiceImpl implements ItemService {
     public ItemDto updateItem(Long ownerId, Long itemId, ItemCreateDto updateDto) {
         Item existingItem = findItemById(itemId);
 
-        // Проверка прав владельца
         if (!existingItem.getOwner().getId().equals(ownerId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Нет прав на изменение этой вещи");
         }
 
-        // Обновление полей
         boolean isUpdated = false;
 
         if (updateDto.getName() != null && !updateDto.getName().isBlank()) {
@@ -93,26 +96,90 @@ public class ItemServiceImpl implements ItemService {
         }
 
         Item updatedItem = itemRepository.save(existingItem);
-        return ItemMapper.toDto(updatedItem);
+
+        LocalDateTime now = LocalDateTime.now();
+        BookingShortDto lastBooking = bookingRepository
+                .findFirstByItemIdAndItemOwnerIdAndStatusInAndStartBeforeOrderByStartDesc(
+                        updatedItem.getId(),
+                        ownerId,
+                        List.of(BookingStatus.APPROVED),
+                        now)
+                .map(ItemMapper::toBookingShortDto)
+                .orElse(null);
+
+        BookingShortDto nextBooking = bookingRepository
+                .findFirstByItemIdAndItemOwnerIdAndStatusInAndStartAfterOrderByStartAsc(
+                        updatedItem.getId(),
+                        ownerId,
+                        List.of(BookingStatus.APPROVED),
+                        now)
+                .map(ItemMapper::toBookingShortDto)
+                .orElse(null);
+
+        return ItemMapper.toDto(updatedItem, lastBooking, nextBooking);
     }
 
     @Override
     @Transactional(readOnly = true)
     public ItemDto getItem(Long itemId) {
         Item item = findItemById(itemId);
-        return ItemMapper.toDto(item);
+
+        LocalDateTime now = LocalDateTime.now();
+        BookingShortDto lastBooking = bookingRepository
+                .findFirstByItemIdAndItemOwnerIdAndStatusInAndStartBeforeOrderByStartDesc(
+                        item.getId(),
+                        item.getOwner().getId(),
+                        List.of(BookingStatus.APPROVED),
+                        now)
+                .map(ItemMapper::toBookingShortDto)
+                .orElse(null);
+
+        BookingShortDto nextBooking = bookingRepository
+                .findFirstByItemIdAndItemOwnerIdAndStatusInAndStartAfterOrderByStartAsc(
+                        item.getId(),
+                        item.getOwner().getId(),
+                        List.of(BookingStatus.APPROVED),
+                        now)
+                .map(ItemMapper::toBookingShortDto)
+                .orElse(null);
+
+        return ItemMapper.toDto(item, lastBooking, nextBooking);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<ItemDto> getItemsByOwnerId(Long ownerId) {
-        // Проверка существования пользователя
         if (!userRepository.existsById(ownerId)) {
             throw new NotFoundException("Пользователь с id " + ownerId + " не найден");
         }
 
-        return itemRepository.findByOwnerId(ownerId).stream()
-                .map(ItemMapper::toDto)
+        LocalDateTime now = LocalDateTime.now();
+        List<Item> items = itemRepository.findByOwnerId(ownerId);
+
+        return items.stream()
+                .map(item -> {
+                    // Получаем последнее завершенное или текущее бронирование
+                    BookingShortDto lastBooking = bookingRepository
+                            .findFirstByItemIdAndItemOwnerIdAndStatusInAndStartBeforeOrderByStartDesc(
+                                    item.getId(),
+                                    ownerId,
+                                    List.of(BookingStatus.APPROVED),
+                                    now)
+                            .map(ItemMapper::toBookingShortDto)
+                            .orElse(null);
+
+                    // Получаем ближайшее будущее бронирование
+                    BookingShortDto nextBooking = bookingRepository
+                            .findFirstByItemIdAndItemOwnerIdAndStatusInAndStartAfterOrderByStartAsc(
+                                    item.getId(),
+                                    ownerId,
+                                    List.of(BookingStatus.APPROVED),
+                                    now)
+                            .map(ItemMapper::toBookingShortDto)
+                            .orElse(null);
+
+                    return ItemMapper.toDto(item, lastBooking, nextBooking);
+                })
                 .collect(Collectors.toList());
     }
 
@@ -124,7 +191,7 @@ public class ItemServiceImpl implements ItemService {
         }
 
         return itemRepository.searchAvailableItems(text.toLowerCase()).stream()
-                .map(ItemMapper::toDto)
+                .map(item -> ItemMapper.toDto(item, null, null))
                 .collect(Collectors.toList());
     }
 }
