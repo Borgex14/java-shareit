@@ -1,15 +1,17 @@
 package ru.practicum.shareit.booking.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import ru.practicum.shareit.booking.dto.BookingMapper;
+import ru.practicum.shareit.booking.BookingFilterState;
+import ru.practicum.shareit.booking.mapper.BookingMapper;
 import ru.practicum.shareit.booking.dto.BookingRequestDto;
 import ru.practicum.shareit.booking.dto.BookingResponseDto;
-import ru.practicum.shareit.booking.dto.BookingState;
+import ru.practicum.shareit.booking.BookingStatus;
 import ru.practicum.shareit.booking.model.Booking;
-import ru.practicum.shareit.booking.model.BookingStatus;
 import ru.practicum.shareit.booking.repository.BookingRepository;
+import ru.practicum.shareit.exception.*;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.user.model.User;
@@ -32,7 +34,7 @@ public class BookingServiceImpl implements BookingService {
         User booker = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
         Item item = itemRepository.findById(bookingRequestDto.getItemId())
-                .orElseThrow(() -> new ItemNotFoundException(bookingRequestDto.getItemId()));
+                .orElseThrow(() -> new ItemNotAvailableException(bookingRequestDto.getItemId()));
 
         if (!item.getAvailable()) {
             throw new ItemNotAvailableException(item.getId());
@@ -57,7 +59,7 @@ public class BookingServiceImpl implements BookingService {
                 .orElseThrow(() -> new BookingNotFoundException(bookingId));
 
         if (!booking.getItem().getOwner().getId().equals(userId)) {
-            throw new NotOwnerException(userId);
+            throw new UserNotFoundException(userId);
         }
         if (booking.getStatus() != BookingStatus.WAITING) {
             throw new BookingAlreadyProcessedException();
@@ -82,13 +84,13 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingResponseDto> getUserBookings(Long userId, BookingState state, Integer from, Integer size) {
+    public List<BookingResponseDto> getUserBookings(Long userId, BookingFilterState state, Integer from, Integer size) {
         userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
         PageRequest page = PageRequest.of(from / size, size);
         LocalDateTime now = LocalDateTime.now();
-        List<Booking> bookings;
+        Page<Booking> bookings;
 
         switch (state) {
             case CURRENT:
@@ -121,13 +123,13 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingResponseDto> getOwnerBookings(Long userId, BookingState state, Integer from, Integer size) {
+    public List<BookingResponseDto> getOwnerBookings(Long userId, BookingFilterState state, Integer from, Integer size) {
         userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
         PageRequest page = PageRequest.of(from / size, size);
         LocalDateTime now = LocalDateTime.now();
-        List<Booking> bookings;
+        Page<Booking> bookings;
 
         switch (state) {
             case CURRENT:
@@ -150,7 +152,7 @@ public class BookingServiceImpl implements BookingService {
                 bookings = bookingRepository.findByItemOwnerIdAndStatusOrderByStartDesc(
                         userId, BookingStatus.REJECTED, page);
                 break;
-            default: // ALL
+            default:
                 bookings = bookingRepository.findByItemOwnerIdOrderByStartDesc(userId, page);
         }
 
