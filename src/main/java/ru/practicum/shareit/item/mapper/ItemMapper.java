@@ -65,4 +65,8 @@ public class ItemMapper {
                 createDto.getRequest()
         );
     }
+
+    public ItemDto toItemDto(Item item) {
+        return null;
+    }
 }
