@@ -4,11 +4,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import ru.practicum.shareit.booking.BookingFilterState;
+import ru.practicum.shareit.booking.state.BookingFilterState;
 import ru.practicum.shareit.booking.mapper.BookingMapper;
 import ru.practicum.shareit.booking.dto.BookingRequestDto;
 import ru.practicum.shareit.booking.dto.BookingResponseDto;
-import ru.practicum.shareit.booking.BookingStatus;
+import ru.practicum.shareit.booking.state.BookingStatus;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.repository.BookingRepository;
 import ru.practicum.shareit.exception.*;
@@ -113,7 +113,7 @@ public class BookingServiceImpl implements BookingService {
                 bookings = bookingRepository.findByBookerIdAndStatusOrderByStartDesc(
                         userId, BookingStatus.REJECTED, page);
                 break;
-            default: // ALL
+            default:
                 bookings = bookingRepository.findByBookerIdOrderByStartDesc(userId, page);
         }
 

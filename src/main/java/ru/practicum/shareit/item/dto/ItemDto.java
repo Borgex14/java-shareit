@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import ru.practicum.shareit.booking.dto.BookingShortDto;
+import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.user.model.User;
 
 @Data
@@ -18,7 +19,7 @@ public class ItemDto {
     @NotNull
     private Boolean available;
     private User owner;
-    private String request;
+    private ItemRequest request;
     private BookingShortDto lastBooking;
     private BookingShortDto nextBooking;
 }

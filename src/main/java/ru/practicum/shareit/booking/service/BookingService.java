@@ -1,9 +1,8 @@
 package ru.practicum.shareit.booking.service;
 
-import ru.practicum.shareit.booking.BookingFilterState;
+import ru.practicum.shareit.booking.state.BookingFilterState;
 import ru.practicum.shareit.booking.dto.BookingRequestDto;
 import ru.practicum.shareit.booking.dto.BookingResponseDto;
-import ru.practicum.shareit.booking.BookingStatus;
 
 import java.util.List;
 
