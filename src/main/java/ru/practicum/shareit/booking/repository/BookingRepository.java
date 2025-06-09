@@ -16,17 +16,25 @@ import java.time.LocalDateTime;
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, Long> {
     Page<Booking> findByBookerIdOrderByStartDesc(Long bookerId, Pageable pageable);
+
     Page<Booking> findByBookerIdAndStartBeforeAndEndAfterOrderByStartDesc(
             Long bookerId, LocalDateTime start, LocalDateTime end, Pageable pageable);
+
     Page<Booking> findByBookerIdAndEndBeforeOrderByStartDesc(Long bookerId, LocalDateTime end, Pageable pageable);
+
     Page<Booking> findByBookerIdAndStartAfterOrderByStartDesc(Long bookerId, LocalDateTime start, Pageable pageable);
+
     Page<Booking> findByBookerIdAndStatusOrderByStartDesc(Long bookerId, BookingStatus status, Pageable pageable);
 
     Page<Booking> findByItemOwnerIdOrderByStartDesc(Long ownerId, Pageable pageable);
+
     Page<Booking> findByItemOwnerIdAndStartBeforeAndEndAfterOrderByStartDesc(
             Long ownerId, LocalDateTime start, LocalDateTime end, Pageable pageable);
+
     Page<Booking> findByItemOwnerIdAndEndBeforeOrderByStartDesc(Long ownerId, LocalDateTime end, Pageable pageable);
+
     Page<Booking> findByItemOwnerIdAndStartAfterOrderByStartDesc(Long ownerId, LocalDateTime start, Pageable pageable);
+
     Page<Booking> findByItemOwnerIdAndStatusOrderByStartDesc(Long ownerId, BookingStatus status, Pageable pageable);
 
     @Query("SELECT b FROM Booking b " +
