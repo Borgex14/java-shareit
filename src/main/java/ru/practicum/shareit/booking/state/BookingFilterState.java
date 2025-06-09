@@ -6,4 +6,5 @@ public enum BookingFilterState {
     FUTURE,
     WAITING,
     REJECTED,
+    ALL
 }

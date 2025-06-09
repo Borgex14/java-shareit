@@ -8,6 +8,8 @@ import ru.practicum.shareit.booking.dto.BookingShortDto;
 import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.user.model.User;
 
+import java.util.List;
+
 @Data
 @AllArgsConstructor
 public class ItemDto {
@@ -22,4 +24,5 @@ public class ItemDto {
     private ItemRequest request;
     private BookingShortDto lastBooking;
     private BookingShortDto nextBooking;
+    private List<CommentDto> comments;
 }

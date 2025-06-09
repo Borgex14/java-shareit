@@ -52,4 +52,15 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("ownerId") Long ownerId,
             @Param("statuses") List<BookingStatus> statuses,
             @Param("now") LocalDateTime now);
+
+    @Query("SELECT CASE WHEN COUNT(b) > 0 THEN true ELSE false END " +
+            "FROM Booking b " +
+            "WHERE b.booker.id = :bookerId " +
+            "AND b.item.id = :itemId " +
+            "AND b.status = ru.practicum.shareit.booking.state.BookingStatus.APPROVED " +
+            "AND b.start <= :now")
+    boolean existsApprovedBookingForUserAndItem(
+            @Param("bookerId") Long bookerId,
+            @Param("itemId") Long itemId,
+            @Param("now") LocalDateTime now);
 }

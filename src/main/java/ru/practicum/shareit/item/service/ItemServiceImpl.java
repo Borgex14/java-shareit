@@ -6,9 +6,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import ru.practicum.shareit.exception.NotFoundException;
+import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemCreateDto;
 import ru.practicum.shareit.item.mapper.ItemMapper;
+import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.user.model.User;
@@ -16,11 +18,13 @@ import ru.practicum.shareit.user.repository.UserRepository;
 import ru.practicum.shareit.booking.state.BookingStatus;
 import ru.practicum.shareit.booking.repository.BookingRepository;
 import ru.practicum.shareit.booking.dto.BookingShortDto;
+import ru.practicum.shareit.item.repository.CommentRepository;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Map;
 
 @Service
 @Transactional(readOnly = true)
@@ -29,12 +33,14 @@ public class ItemServiceImpl implements ItemService {
     private final ItemRepository itemRepository;
     private final UserRepository userRepository;
     private final BookingRepository bookingRepository;
+    private final CommentRepository commentRepository;
 
     @Autowired
-    public ItemServiceImpl(ItemRepository itemRepository, UserRepository userRepository, BookingRepository bookingRepository) {
+    public ItemServiceImpl(ItemRepository itemRepository, UserRepository userRepository, BookingRepository bookingRepository, CommentRepository commentRepository) {
         this.itemRepository = itemRepository;
         this.userRepository = userRepository;
         this.bookingRepository = bookingRepository;
+        this.commentRepository = commentRepository;
     }
 
     private Item findItemById(Long itemId) {
@@ -62,7 +68,36 @@ public class ItemServiceImpl implements ItemService {
         }
 
         Item savedItem = itemRepository.save(item);
-        return ItemMapper.toDto(savedItem, null, null);
+        return ItemMapper.toDto(savedItem, null, null, Collections.emptyList());
+    }
+
+    @Override
+    @Transactional
+    public CommentDto addComment(Long userId, Long itemId, CommentDto commentDto) {
+        User author = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
+
+        Item item = findItemById(itemId);
+
+        // Проверяем, что у пользователя есть хотя бы одно APPROVED бронирование этого item,
+        // которое уже началось (start <= now)
+        boolean hasBooked = bookingRepository.existsApprovedBookingForUserAndItem(
+                userId,
+                itemId,
+                LocalDateTime.now());
+
+        if (!hasBooked) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Вы не можете оставить комментарий к вещи, которую не арендовали");
+        }
+
+        Comment comment = new Comment();
+        comment.setText(commentDto.getText());
+        comment.setItem(item);
+        comment.setAuthor(author);
+        comment.setCreated(LocalDateTime.now());
+
+        return convertToDto(commentRepository.save(comment));
     }
 
     @Override
@@ -116,7 +151,20 @@ public class ItemServiceImpl implements ItemService {
                 .map(ItemMapper::toBookingShortDto)
                 .orElse(null);
 
-        return ItemMapper.toDto(updatedItem, lastBooking, nextBooking);
+        List<CommentDto> comments = commentRepository.findByItemId(itemId).stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+
+        return ItemMapper.toDto(updatedItem, lastBooking, nextBooking, comments);
+    }
+
+    private CommentDto convertToDto(Comment comment) {
+        return new CommentDto(
+                comment.getId(),
+                comment.getText(),
+                comment.getAuthor().getName(),
+                comment.getCreated()
+        );
     }
 
     @Override
@@ -143,22 +191,32 @@ public class ItemServiceImpl implements ItemService {
                 .map(ItemMapper::toBookingShortDto)
                 .orElse(null);
 
-        return ItemMapper.toDto(item, lastBooking, nextBooking);
+        List<CommentDto> comments = commentRepository.findByItemId(itemId).stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+
+        return ItemMapper.toDto(item, lastBooking, nextBooking, comments);
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<ItemDto> getItemsByOwnerId(Long ownerId) {
         if (!userRepository.existsById(ownerId)) {
             throw new NotFoundException("Пользователь с id " + ownerId + " не найден");
         }
 
-        LocalDateTime now = LocalDateTime.now();
         List<Item> items = itemRepository.findByOwnerId(ownerId);
+        List<Long> itemIds = items.stream().map(Item::getId).collect(Collectors.toList());
+
+        Map<Long, List<CommentDto>> commentsByItem = commentRepository.findByItemIdIn(itemIds).stream()
+                .collect(Collectors.groupingBy(
+                        comment -> comment.getItem().getId(),
+                        Collectors.mapping(this::convertToDto, Collectors.toList())
+                ));
+
+        LocalDateTime now = LocalDateTime.now();
 
         return items.stream()
                 .map(item -> {
-                    // Получаем последнее завершенное или текущее бронирование
                     BookingShortDto lastBooking = bookingRepository
                             .findFirstByItemIdAndItemOwnerIdAndStatusInAndStartBeforeOrderByStartDesc(
                                     item.getId(),
@@ -168,7 +226,6 @@ public class ItemServiceImpl implements ItemService {
                             .map(ItemMapper::toBookingShortDto)
                             .orElse(null);
 
-                    // Получаем ближайшее будущее бронирование
                     BookingShortDto nextBooking = bookingRepository
                             .findFirstByItemIdAndItemOwnerIdAndStatusInAndStartAfterOrderByStartAsc(
                                     item.getId(),
@@ -178,10 +235,16 @@ public class ItemServiceImpl implements ItemService {
                             .map(ItemMapper::toBookingShortDto)
                             .orElse(null);
 
-                    return ItemMapper.toDto(item, lastBooking, nextBooking);
+                    return ItemMapper.toDto(
+                            item,
+                            lastBooking,
+                            nextBooking,
+                            commentsByItem.getOrDefault(item.getId(), Collections.emptyList())
+                    );
                 })
                 .collect(Collectors.toList());
     }
+
 
     @Override
     @Transactional(readOnly = true)
@@ -191,7 +254,7 @@ public class ItemServiceImpl implements ItemService {
         }
 
         return itemRepository.searchAvailableItems(text.toLowerCase()).stream()
-                .map(item -> ItemMapper.toDto(item, null, null))
+                .map(item -> ItemMapper.toDto(item, null, null, Collections.emptyList()))
                 .collect(Collectors.toList());
     }
 }
