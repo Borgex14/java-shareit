@@ -79,8 +79,6 @@ public class ItemServiceImpl implements ItemService {
 
         Item item = findItemById(itemId);
 
-        // Проверяем, что у пользователя есть хотя бы одно APPROVED бронирование этого item,
-        // которое уже началось (start <= now)
         boolean hasBooked = bookingRepository.existsApprovedBookingForUserAndItem(
                 userId,
                 itemId,

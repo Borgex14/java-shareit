@@ -7,27 +7,30 @@ import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemCreateDto;
+import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.mapper.UserMapper;
+import ru.practicum.shareit.user.model.User;
 
 import java.util.List;
 
 @Component
 public class ItemMapper {
 
-    public static ItemDto toDto(Item item, BookingShortDto lastBooking, BookingShortDto nextBooking, List<CommentDto> comments) {
+    public static ItemDto toDto(Item item, BookingShortDto lastBooking,
+                                BookingShortDto nextBooking, List<CommentDto> comments) {
         if (item == null) {
             return null;
         }
-        return new ItemDto(
-                item.getId(),
-                item.getName(),
-                item.getDescription(),
-                item.getAvailable(),
-                item.getOwner(),
-                item.getRequest(),
-                lastBooking,
-                nextBooking,
-                comments
-        );
+        return ItemDto.builder()
+                .id(item.getId())
+                .name(item.getName())
+                .description(item.getDescription())
+                .available(item.getAvailable())
+                .owner(toUserDto(item.getOwner()))  // Преобразуем User в UserDto
+                .lastBooking(lastBooking)
+                .nextBooking(nextBooking)
+                .comments(comments)
+                .build();
     }
 
     public static BookingShortDto toBookingShortDto(Booking booking) {
@@ -46,14 +49,14 @@ public class ItemMapper {
         if (dto == null) {
             return null;
         }
-        return new Item(
-                dto.getId(),
-                dto.getName(),
-                dto.getDescription(),
-                dto.getAvailable(),
-                dto.getOwner(),
-                dto.getRequest()
-        );
+        return Item.builder()
+                .id(dto.getId())
+                .name(dto.getName())
+                .description(dto.getDescription())
+                .available(dto.getAvailable())
+                .owner(UserMapper.toEntity(dto.getOwner()))
+                .request(dto.getRequest())
+                .build();
     }
 
     public static Item fromCreateDto(ItemCreateDto createDto) {
@@ -72,5 +75,16 @@ public class ItemMapper {
 
     public ItemDto toItemDto(Item item) {
         return null;
+    }
+
+    private static UserDto toUserDto(User user) {
+        if (user == null) {
+            return null;
+        }
+        return UserDto.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .build();
     }
 }
