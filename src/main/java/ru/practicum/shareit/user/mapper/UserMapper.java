@@ -27,4 +27,8 @@ public class UserMapper {
         }
         return new User(null, createDto.getName(), createDto.getEmail());
     }
+
+    public UserDto toUserDto(User user) {
+        return null;
+    }
 }
