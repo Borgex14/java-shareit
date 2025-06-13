@@ -71,4 +71,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("bookerId") Long bookerId,
             @Param("itemId") Long itemId,
             @Param("currentDate") LocalDateTime currentDate);
+    boolean existsByBookerIdAndItemIdAndStartAfter(
+            @Param("bookerId") Long bookerId,
+            @Param("itemId") Long itemId,
+            @Param("start") LocalDateTime start);
 }

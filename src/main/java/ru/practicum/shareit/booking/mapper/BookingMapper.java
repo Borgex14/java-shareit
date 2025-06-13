@@ -1,7 +1,7 @@
 package ru.practicum.shareit.booking.mapper;
 
 import org.mapstruct.Mapper;
-import ru.practicum.shareit.booking.state.BookingStatus;
+import org.mapstruct.Mapping;
 import ru.practicum.shareit.booking.dto.BookingRequestDto;
 import ru.practicum.shareit.booking.dto.BookingResponseDto;
 import ru.practicum.shareit.booking.model.Booking;
@@ -10,42 +10,22 @@ import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {ItemMapper.class, UserMapper.class})
 public interface BookingMapper {
 
-    ItemMapper itemMapper = new ItemMapper();
-    UserMapper userMapper = new UserMapper();
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "start", source = "bookingRequestDto.start")
+    @Mapping(target = "end", source = "bookingRequestDto.end")
+    @Mapping(target = "item", source = "item")
+    @Mapping(target = "booker", source = "booker")
+    @Mapping(target = "status", expression = "java(ru.practicum.shareit.booking.state.BookingStatus.WAITING)")
+    Booking toBooking(BookingRequestDto bookingRequestDto, User booker, Item item);
 
-    default Booking toBooking(BookingRequestDto bookingRequestDto, User booker, Item item) {
-        if (bookingRequestDto == null && booker == null && item == null) {
-            return null;
-        }
-
-        Booking booking = new Booking();
-        if (bookingRequestDto != null) {
-            booking.setStart(bookingRequestDto.getStart());
-            booking.setEnd(bookingRequestDto.getEnd());
-        }
-        booking.setItem(item);
-        booking.setBooker(booker);
-        booking.setStatus(BookingStatus.WAITING);
-
-        return booking;
-    }
-
-    default BookingResponseDto toBookingResponseDto(Booking booking) {
-        if (booking == null) {
-            return null;
-        }
-
-        BookingResponseDto bookingResponseDto = new BookingResponseDto();
-        bookingResponseDto.setId(booking.getId());
-        bookingResponseDto.setStart(booking.getStart());
-        bookingResponseDto.setEnd(booking.getEnd());
-        bookingResponseDto.setStatus(booking.getStatus());
-        bookingResponseDto.setItem(itemMapper.toItemDto(booking.getItem()));
-        bookingResponseDto.setBooker(userMapper.toUserDto(booking.getBooker()));
-
-        return bookingResponseDto;
-    }
+    @Mapping(target = "id", source = "booking.id")
+    @Mapping(target = "start", source = "booking.start")
+    @Mapping(target = "end", source = "booking.end")
+    @Mapping(target = "status", source = "booking.status")
+    @Mapping(target = "item", source = "booking.item")
+    @Mapping(target = "booker", source = "booking.booker")
+    BookingResponseDto toBookingResponseDto(Booking booking);
 }

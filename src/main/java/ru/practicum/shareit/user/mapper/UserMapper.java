@@ -1,34 +1,25 @@
 package ru.practicum.shareit.user.mapper;
 
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.dto.UserCreateDto;
 
+@Mapper(componentModel = "spring")
+public interface UserMapper {
+    @Mapping(target = "id", source = "id")
+    @Mapping(target = "name", source = "name")
+    @Mapping(target = "email", source = "email")
+    UserDto toDto(User user);
 
-public class UserMapper {
+    @Mapping(target = "id", source = "id")
+    @Mapping(target = "name", source = "name")
+    @Mapping(target = "email", source = "email")
+    User toEntity(UserDto dto);
 
-    public static UserDto toDto(User user) {
-        if (user == null) {
-            return null;
-        }
-        return new UserDto(user.getId(), user.getName(), user.getEmail());
-    }
-
-    public static User toEntity(UserDto dto) {
-        if (dto == null) {
-            return null;
-        }
-        return new User(dto.getId(), dto.getName(), dto.getEmail());
-    }
-
-    public static User fromCreateDto(UserCreateDto createDto) {
-        if (createDto == null) {
-            return null;
-        }
-        return new User(null, createDto.getName(), createDto.getEmail());
-    }
-
-    public UserDto toUserDto(User user) {
-        return null;
-    }
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "name", source = "name")
+    @Mapping(target = "email", source = "email")
+    User fromCreateDto(UserCreateDto createDto);
 }
