@@ -34,7 +34,7 @@ public class BookingServiceImpl implements BookingService {
         User booker = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
         Item item = itemRepository.findById(bookingRequestDto.getItemId())
-                .orElseThrow(() -> new NotFoundException("Item not found"));
+                .orElseThrow(() -> new NotFoundException("Item with id " + bookingRequestDto.getItemId() + " not found"));
 
         if (!item.getAvailable()) {
             throw new ItemNotAvailableException(item.getId());
@@ -59,7 +59,7 @@ public class BookingServiceImpl implements BookingService {
                 .orElseThrow(() -> new BookingNotFoundException(bookingId));
 
         if (!booking.getItem().getOwner().getId().equals(userId)) {
-            throw new UserNotFoundException(userId);
+            throw new AccessDeniedException("User with id " + userId + " is not the owner of the item");
         }
         if (booking.getStatus() != BookingStatus.WAITING) {
             throw new BookingAlreadyProcessedException();

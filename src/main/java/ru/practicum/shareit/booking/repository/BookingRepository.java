@@ -6,8 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import ru.practicum.shareit.booking.state.BookingStatus;
 import ru.practicum.shareit.booking.model.Booking;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,42 +35,18 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     Page<Booking> findByItemOwnerIdAndStatusOrderByStartDesc(Long ownerId, BookingStatus status, Pageable pageable);
 
-    @Query("SELECT b FROM Booking b " +
-            "WHERE b.item.id = :itemId " +
-            "AND b.item.owner.id = :ownerId " +
-            "AND b.status IN :statuses " +
-            "AND b.start < :now " +
-            "ORDER BY b.start DESC")
     Optional<Booking> findFirstByItemIdAndItemOwnerIdAndStatusInAndStartBeforeOrderByStartDesc(
-            @Param("itemId") Long itemId,
-            @Param("ownerId") Long ownerId,
-            @Param("statuses") List<BookingStatus> statuses,
-            @Param("now") LocalDateTime now);
+            Long itemId, Long ownerId, List<BookingStatus> statuses, LocalDateTime now);
 
-    @Query("SELECT b FROM Booking b " +
-            "WHERE b.item.id = :itemId " +
-            "AND b.item.owner.id = :ownerId " +
-            "AND b.status IN :statuses " +
-            "AND b.start > :now " +
-            "ORDER BY b.start ASC")
     Optional<Booking> findFirstByItemIdAndItemOwnerIdAndStatusInAndStartAfterOrderByStartAsc(
-            @Param("itemId") Long itemId,
-            @Param("ownerId") Long ownerId,
-            @Param("statuses") List<BookingStatus> statuses,
-            @Param("now") LocalDateTime now);
+            Long itemId, Long ownerId, List<BookingStatus> statuses, LocalDateTime now);
 
-    @Query("SELECT CASE WHEN COUNT(b) > 0 THEN true ELSE false END " +
-            "FROM Booking b " +
-            "WHERE b.booker.id = :bookerId " +
-            "AND b.item.id = :itemId " +
-            "AND b.status = ru.practicum.shareit.booking.state.BookingStatus.APPROVED " +
-            "AND b.start < :currentDate")
-    boolean existsApprovedBookingForUserAndItem(
-            @Param("bookerId") Long bookerId,
-            @Param("itemId") Long itemId,
-            @Param("currentDate") LocalDateTime currentDate);
-    boolean existsByBookerIdAndItemIdAndStartAfter(
-            @Param("bookerId") Long bookerId,
-            @Param("itemId") Long itemId,
-            @Param("start") LocalDateTime start);
+    List<Booking> findByBookerIdAndItemIdAndStatusOrderByStartDesc(
+            Long bookerId, Long itemId, BookingStatus status);
+
+    Optional<Booking> findFirstByItemIdAndItemOwnerIdAndStatusInOrderByStartDesc(
+            Long itemId, Long ownerId, List<BookingStatus> statuses);
+
+    Optional<Booking> findFirstByItemIdAndBookerIdAndStatusInOrderByStartDesc(
+            Long itemId, Long bookerId, List<BookingStatus> statuses);
 }

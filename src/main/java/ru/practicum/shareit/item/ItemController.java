@@ -36,8 +36,10 @@ public class ItemController {
     }
 
     @GetMapping("/{itemId}")
-    public ResponseEntity<ItemDto> getItem(@PathVariable Long itemId) {
-        return ResponseEntity.ok(itemService.getItem(itemId));
+    public ResponseEntity<ItemDto> getItem(
+            @PathVariable Long itemId,
+            @RequestHeader("X-Sharer-User-Id") Long userId) {
+        return ResponseEntity.ok(itemService.getItem(itemId, userId));
     }
 
     @GetMapping
@@ -56,7 +58,7 @@ public class ItemController {
     public ResponseEntity<CommentDto> addComment(
             @RequestHeader("X-Sharer-User-Id") Long userId,
             @PathVariable Long itemId,
-            @Valid @RequestBody CommentDto commentDto) {
-        return ResponseEntity.ok(itemService.addComment(userId, itemId, commentDto));
+            @Valid @RequestBody CommentDto dto) {
+        return ResponseEntity.ok(itemService.addComment(userId, itemId, dto));
     }
 }

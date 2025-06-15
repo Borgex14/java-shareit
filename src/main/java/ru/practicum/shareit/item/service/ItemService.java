@@ -12,11 +12,11 @@ public interface ItemService {
     ItemDto addItem(Long userID, ItemCreateDto createDto);
 
     @Transactional
-    CommentDto addComment(Long userId, Long itemId, CommentDto commentDto);
+    CommentDto addComment(Long bookerId, Long itemId, CommentDto dto);
 
     ItemDto updateItem(Long ownerId, Long itemId, ItemCreateDto updateDto);
 
-    ItemDto getItem(Long itemId);
+    ItemDto getItem(Long itemId, Long userId);
 
     List<ItemDto> getItemsByOwnerId(Long ownerId);
 
