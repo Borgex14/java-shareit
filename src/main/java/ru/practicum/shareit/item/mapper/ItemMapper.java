@@ -1,52 +1,57 @@
 package ru.practicum.shareit.item.mapper;
 
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import ru.practicum.shareit.booking.dto.BookingShortDto;
+import ru.practicum.shareit.booking.model.Booking;
+import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemCreateDto;
+import ru.practicum.shareit.user.mapper.UserMapper;
 
-@Component
-public class ItemMapper {
 
-    public static ItemDto toDto(Item item) {
-        if (item == null) {
-            return null;
-        }
-        return new ItemDto(
-                item.getId(),
-                item.getName(),
-                item.getDescription(),
-                item.getAvailable(),
-                item.getOwner(),
-                item.getRequest()
-        );
-    }
+import java.util.List;
 
-    public static Item toEntity(ItemDto dto) {
-        if (dto == null) {
-            return null;
-        }
-        return new Item(
-                dto.getId(),
-                dto.getName(),
-                dto.getDescription(),
-                dto.getAvailable(),
-                dto.getOwner(),
-                dto.getRequest()
-        );
-    }
+@Mapper(componentModel = "spring", uses = UserMapper.class)
+public interface ItemMapper {
+    @Mapping(target = "id", source = "item.id")
+    @Mapping(target = "name", source = "item.name")
+    @Mapping(target = "description", source = "item.description")
+    @Mapping(target = "available", source = "item.available")
+    @Mapping(target = "owner", source = "item.owner")
+    @Mapping(target = "lastBooking", source = "lastBooking")
+    @Mapping(target = "nextBooking", source = "nextBooking")
+    @Mapping(target = "comments", source = "comments")
+    ItemDto toFullDto(Item item, BookingShortDto lastBooking,
+                      BookingShortDto nextBooking, List<CommentDto> comments);
 
-    public static Item fromCreateDto(ItemCreateDto createDto) {
-        if (createDto == null) {
-            return null;
-        }
-        return new Item(
-                null,
-                createDto.getName(),
-                createDto.getDescription(),
-                createDto.getAvailable(),
-                createDto.getOwner(),
-                createDto.getRequest()
-        );
-    }
+    @Mapping(target = "id", source = "id")
+    @Mapping(target = "name", source = "name")
+    @Mapping(target = "description", source = "description")
+    @Mapping(target = "available", source = "available")
+    @Mapping(target = "owner", source = "owner")
+    ItemDto toSimpleDto(Item item);
+
+    @Mapping(target = "id", source = "booking.id")
+    @Mapping(target = "bookerId", source = "booker.id")
+    @Mapping(target = "start", source = "start")
+    @Mapping(target = "end", source = "end")
+    BookingShortDto toBookingShortDto(Booking booking);
+
+    @Mapping(target = "id", source = "id")
+    @Mapping(target = "name", source = "name")
+    @Mapping(target = "description", source = "description")
+    @Mapping(target = "available", source = "available")
+    @Mapping(target = "owner", source = "owner")
+    @Mapping(target = "request", source = "request")
+    Item toEntity(ItemDto dto);
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "name", source = "name")
+    @Mapping(target = "description", source = "description")
+    @Mapping(target = "available", source = "available")
+    @Mapping(target = "request", source = "request")
+    @Mapping(target = "owner", ignore = true)
+    Item fromCreateDto(ItemCreateDto createDto);
 }
