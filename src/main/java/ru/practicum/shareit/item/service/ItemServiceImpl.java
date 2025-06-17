@@ -82,9 +82,7 @@ public class ItemServiceImpl implements ItemService {
     @Override
     @Transactional
     public CommentDto addComment(Long bookerId, Long itemId, CommentDto dto) {
-        // Установка времени с явным указанием зоны
-        ZoneId zone = ZoneId.of("Europe/Moscow");
-        LocalDateTime currentTime = LocalDateTime.now(zone);
+        LocalDateTime now = LocalDateTime.now();
 
         User author = userRepository.findById(bookerId)
                 .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
@@ -95,15 +93,15 @@ public class ItemServiceImpl implements ItemService {
                 .findByBookerIdAndItemIdAndStatusOrderByStartDesc(bookerId, itemId, BookingStatus.APPROVED);
 
         boolean canComment = bookings.stream()
-                .anyMatch(booking -> booking.getEnd().isBefore(currentTime));
+                .anyMatch(booking -> booking.getEnd().isBefore(now));
 
         bookings.forEach(b -> System.out.println(
                 "Booking ID: " + b.getId() +
                         ", End: " + b.getEnd() +
-                        ", Is before now: " + b.getEnd().isBefore(currentTime)
+                        ", Is before now: " + b.getEnd().isBefore(now)
         ));
 
-        System.out.println("Current time (Moscow): " + currentTime);
+        System.out.println("Current time (Moscow): " + now);
 
         if (!canComment) {
             log.warn("User {} cannot comment item {} - no completed bookings found", bookerId, itemId);
@@ -114,7 +112,7 @@ public class ItemServiceImpl implements ItemService {
                 .text(dto.getText())
                 .item(item)
                 .author(author)
-                .created(currentTime)
+                .created(now)
                 .build();
 
         Comment savedComment = commentRepository.save(comment);
@@ -183,8 +181,7 @@ public class ItemServiceImpl implements ItemService {
     @Transactional(readOnly = true)
     public ItemDto getItem(Long itemId, Long ownerId) {
         Item item = findItemById(itemId);
-        ZoneId zone = ZoneId.of("Europe/Moscow");
-        LocalDateTime currentTime = LocalDateTime.now(zone);
+        LocalDateTime now = LocalDateTime.now();
 
         List<CommentDto> comments = commentRepository.findByItemId(itemId).stream()
                 .map(CommentMapper::mapCommentToDto)
@@ -199,7 +196,7 @@ public class ItemServiceImpl implements ItemService {
                             item.getId(),
                             ownerId,
                             List.of(BookingStatus.APPROVED),
-                            currentTime)
+                            now)
                     .map(itemMapper::toBookingShortDto)
                     .orElse(null);
 
@@ -208,7 +205,7 @@ public class ItemServiceImpl implements ItemService {
                             item.getId(),
                             ownerId,
                             List.of(BookingStatus.APPROVED),
-                            currentTime)
+                            now)
                     .map(itemMapper::toBookingShortDto)
                     .orElse(null);
         }
