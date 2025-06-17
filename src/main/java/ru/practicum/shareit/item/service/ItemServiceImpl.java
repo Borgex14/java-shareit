@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.exception.NotFoundException;
+import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemCreateDto;
@@ -24,6 +25,7 @@ import ru.practicum.shareit.booking.dto.BookingShortDto;
 import ru.practicum.shareit.item.repository.CommentRepository;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -80,30 +82,39 @@ public class ItemServiceImpl implements ItemService {
     @Override
     @Transactional
     public CommentDto addComment(Long bookerId, Long itemId, CommentDto dto) {
+        // Установка времени с явным указанием зоны
+        ZoneId zone = ZoneId.of("Europe/Moscow");
+        LocalDateTime currentTime = LocalDateTime.now(zone);
+
         User author = userRepository.findById(bookerId)
                 .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new NotFoundException("Вещь не найдена"));
 
         List<Booking> bookings = bookingRepository
-                .findByBookerIdAndItemIdAndStatusOrderByStartDesc(
-                        bookerId,
-                        itemId,
-                        BookingStatus.APPROVED);
+                .findByBookerIdAndItemIdAndStatusOrderByStartDesc(bookerId, itemId, BookingStatus.APPROVED);
 
         boolean canComment = bookings.stream()
-                .anyMatch(booking -> booking.getEnd().isBefore(LocalDateTime.now()));
+                .anyMatch(booking -> booking.getEnd().isBefore(currentTime));
+
+        bookings.forEach(b -> System.out.println(
+                "Booking ID: " + b.getId() +
+                        ", End: " + b.getEnd() +
+                        ", Is before now: " + b.getEnd().isBefore(currentTime)
+        ));
+
+        System.out.println("Current time (Moscow): " + currentTime);
 
         if (!canComment) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Вы не можете оставить комментарий к вещи, которую не арендовали или бронирование еще не завершено");
+            log.warn("User {} cannot comment item {} - no completed bookings found", bookerId, itemId);
+            throw new ValidationException("You can only comment items you've actually booked in the past");
         }
 
         Comment comment = Comment.builder()
                 .text(dto.getText())
                 .item(item)
                 .author(author)
-                .created(LocalDateTime.now())
+                .created(currentTime)
                 .build();
 
         Comment savedComment = commentRepository.save(comment);
@@ -170,9 +181,10 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     @Transactional(readOnly = true)
-    public ItemDto getItem(Long itemId, Long userId) {
+    public ItemDto getItem(Long itemId, Long ownerId) {
         Item item = findItemById(itemId);
-        LocalDateTime now = LocalDateTime.now();
+        ZoneId zone = ZoneId.of("Europe/Moscow");
+        LocalDateTime currentTime = LocalDateTime.now(zone);
 
         List<CommentDto> comments = commentRepository.findByItemId(itemId).stream()
                 .map(CommentMapper::mapCommentToDto)
@@ -181,35 +193,27 @@ public class ItemServiceImpl implements ItemService {
         BookingShortDto lastBooking = null;
         BookingShortDto nextBooking = null;
 
-        if (item.getOwner().getId().equals(userId)) {
+        if (item.getOwner().getId().equals(ownerId)) {
             lastBooking = bookingRepository
-                    .findFirstByItemIdAndItemOwnerIdAndStatusInOrderByStartDesc(
+                    .findFirstByItemIdAndItemOwnerIdAndStatusInAndEndBeforeOrderByEndDesc(
                             item.getId(),
-                            userId,
-                            List.of(BookingStatus.APPROVED))
-                    .filter(b -> b.getStart().isBefore(now)) // Началось до текущего момента
+                            ownerId,
+                            List.of(BookingStatus.APPROVED),
+                            currentTime)
                     .map(itemMapper::toBookingShortDto)
                     .orElse(null);
 
             nextBooking = bookingRepository
                     .findFirstByItemIdAndItemOwnerIdAndStatusInAndStartAfterOrderByStartAsc(
                             item.getId(),
-                            userId,
+                            ownerId,
                             List.of(BookingStatus.APPROVED),
-                            now)
-                    .map(itemMapper::toBookingShortDto)
-                    .orElse(null);
-        } else {
-            lastBooking = bookingRepository
-                    .findFirstByItemIdAndBookerIdAndStatusInOrderByStartDesc(
-                            item.getId(),
-                            userId,
-                            List.of(BookingStatus.APPROVED))
-                    .filter(b -> b.getEnd().isBefore(now)) // Только завершенные
+                            currentTime)
                     .map(itemMapper::toBookingShortDto)
                     .orElse(null);
         }
 
+        log.debug("Returning item with lastBooking: {}, nextBooking: {}", lastBooking, nextBooking);
         return itemMapper.toFullDto(item, lastBooking, nextBooking, comments);
     }
 
@@ -259,7 +263,6 @@ public class ItemServiceImpl implements ItemService {
                 })
                 .collect(Collectors.toList());
     }
-
 
     @Override
     @Transactional(readOnly = true)

@@ -10,6 +10,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: admin
       POSTGRES_DB: postgres
+      TZ: Europe/Moscow
     ports:
       - "5432:5432"
     volumes:
@@ -42,6 +43,7 @@ services:
       SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
       SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "true"
       SPRING_SQL_INIT_MODE: never
+      TZ: Europe/Moscow
     volumes:
       - ./logs:/app/logs
 networks:
