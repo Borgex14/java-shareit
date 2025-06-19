@@ -31,26 +31,50 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingResponseDto createBooking(Long userId, BookingRequestDto bookingRequestDto) {
-        User booker = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
-        Item item = itemRepository.findById(bookingRequestDto.getItemId())
-                .orElseThrow(() -> new NotFoundException("Item with id " + bookingRequestDto.getItemId() + " not found"));
+        User booker = getUserOrThrow(userId);
+        Item item = getItemOrThrow(bookingRequestDto.getItemId());
 
-        if (!item.getAvailable()) {
-            throw new ItemNotAvailableException(item.getId());
-        }
-        if (item.getOwner().getId().equals(userId)) {
-            throw new BookingOwnItemException();
-        }
-        if (bookingRequestDto.getEnd().isBefore(bookingRequestDto.getStart()) ||
-                bookingRequestDto.getEnd().equals(bookingRequestDto.getStart())) {
-            throw new InvalidDateTimeException("End date must be after start date");
-        }
+        validateBookingCreation(userId, item, bookingRequestDto);
 
         Booking booking = bookingMapper.toBooking(bookingRequestDto, booker, item);
         booking.setStatus(BookingStatus.WAITING);
         Booking savedBooking = bookingRepository.save(booking);
         return bookingMapper.toBookingResponseDto(savedBooking);
+    }
+
+    private User getUserOrThrow(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+    }
+
+    private Item getItemOrThrow(Long itemId) {
+        return itemRepository.findById(itemId)
+                .orElseThrow(() -> new NotFoundException("Item with id " + itemId + " not found"));
+    }
+
+    private void validateBookingCreation(Long userId, Item item, BookingRequestDto bookingRequestDto) {
+        LocalDateTime now = LocalDateTime.now();
+
+        if (!item.getAvailable()) {
+            throw new ItemNotAvailableException(item.getId());
+        }
+
+        if (item.getOwner().getId().equals(userId)) {
+            throw new BookingOwnItemException();
+        }
+
+        if (bookingRequestDto.getEnd().isBefore(bookingRequestDto.getStart()) ||
+                bookingRequestDto.getEnd().equals(bookingRequestDto.getStart())) {
+            throw new InvalidDateTimeException("End date must be after start date");
+        }
+
+        if (bookingRequestDto.getStart().isBefore(now)) {
+            throw new InvalidDateTimeException("Start date must be in the future");
+        }
+
+        if (bookingRequestDto.getEnd().isBefore(now)) {
+            throw new InvalidDateTimeException("End date must be in the future");
+        }
     }
 
     @Override
