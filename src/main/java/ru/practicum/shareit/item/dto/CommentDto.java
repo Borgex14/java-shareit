@@ -1,5 +1,6 @@
 package ru.practicum.shareit.item.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,9 +14,12 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CommentDto {
-    Long id;
-    String text;
-    Item item;
-    String authorName;
-    LocalDateTime created;
+    private Long id;
+
+    @NotBlank(message = "Текст комментария не может быть пустым")
+    private String text;
+
+    private Item item;
+    private String authorName;
+    private LocalDateTime created;
 }
