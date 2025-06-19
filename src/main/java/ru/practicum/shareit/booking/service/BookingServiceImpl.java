@@ -37,7 +37,6 @@ public class BookingServiceImpl implements BookingService {
         validateBookingCreation(userId, item, bookingRequestDto);
 
         Booking booking = bookingMapper.toBooking(bookingRequestDto, booker, item);
-        booking.setStatus(BookingStatus.WAITING);
         Booking savedBooking = bookingRepository.save(booking);
         return bookingMapper.toBookingResponseDto(savedBooking);
     }
@@ -79,8 +78,7 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingResponseDto approveBooking(Long userId, Long bookingId, Boolean approved) {
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new BookingNotFoundException(bookingId));
+        Booking booking = getBookingOrThrow(bookingId);
 
         if (!booking.getItem().getOwner().getId().equals(userId)) {
             throw new AccessDeniedException("User with id " + userId + " is not the owner of the item");
@@ -94,10 +92,14 @@ public class BookingServiceImpl implements BookingService {
         return bookingMapper.toBookingResponseDto(updatedBooking);
     }
 
+    private Booking getBookingOrThrow(Long bookingId) {
+        return bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new BookingNotFoundException(bookingId));
+    }
+
     @Override
     public BookingResponseDto getBooking(Long userId, Long bookingId) {
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new BookingNotFoundException(bookingId));
+        Booking booking = getBookingOrThrow(bookingId);
 
         if (!booking.getBooker().getId().equals(userId) &&
                 !booking.getItem().getOwner().getId().equals(userId)) {
