@@ -8,6 +8,7 @@ import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemCreateDto;
+import ru.practicum.shareit.request.dto.ItemResponseDto;
 import ru.practicum.shareit.user.mapper.UserMapper;
 
 
@@ -54,4 +55,8 @@ public interface ItemMapper {
     @Mapping(target = "request", source = "request")
     @Mapping(target = "owner", ignore = true)
     Item fromCreateDto(ItemCreateDto createDto);
+
+    @Mapping(target = "requestId", source = "request.id")
+    ItemDto toDto(Item item);
+    ItemResponseDto toResponseDto(Item item);
 }

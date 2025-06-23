@@ -16,4 +16,6 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
             "OR LOWER(i.description) LIKE LOWER(CONCAT('%', :text, '%'))) " +
             "AND i.available = true")
     List<Item> searchAvailableItems(String text);
+
+    List<Item> findAllByRequestId(Long requestId);
 }
