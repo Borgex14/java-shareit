@@ -5,10 +5,10 @@ import org.mapstruct.Mapping;
 import ru.practicum.shareit.booking.dto.BookingShortDto;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.item.dto.CommentDto;
+import ru.practicum.shareit.item.dto.ItemRequestCreateDto;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemCreateDto;
-import ru.practicum.shareit.request.dto.ItemResponseDto;
 import ru.practicum.shareit.user.mapper.UserMapper;
 
 
@@ -32,6 +32,7 @@ public interface ItemMapper {
     @Mapping(target = "description", source = "description")
     @Mapping(target = "available", source = "available")
     @Mapping(target = "owner", source = "owner")
+    @Mapping(target = "requestId", source = "request.id")
     ItemDto toSimpleDto(Item item);
 
     @Mapping(target = "id", source = "booking.id")
@@ -52,11 +53,10 @@ public interface ItemMapper {
     @Mapping(target = "name", source = "name")
     @Mapping(target = "description", source = "description")
     @Mapping(target = "available", source = "available")
-    @Mapping(target = "request", source = "request")
     @Mapping(target = "owner", ignore = true)
     Item fromCreateDto(ItemCreateDto createDto);
 
-    @Mapping(target = "requestId", source = "request.id")
-    ItemDto toDto(Item item);
-    ItemResponseDto toResponseDto(Item item);
+    static ItemRequestCreateDto toItemRequestCreateDto(Item item) {
+        return new ItemRequestCreateDto(item.getId(), item.getName(), item.getOwner().getId());
+    }
 }

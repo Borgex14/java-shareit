@@ -1,14 +1,18 @@
 package ru.practicum.shareit.request.repository;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import ru.practicum.shareit.request.model.ItemRequest;
 
 import java.util.List;
 
 public interface ItemRequestRepository extends JpaRepository<ItemRequest, Long> {
-    List<ItemRequest> findAllByRequesterIdOrderByCreatedDesc(Long requesterId);
+    @Query("SELECT r FROM ItemRequest r JOIN FETCH r.requestor WHERE r.requestor.id = :requestorId")
+    List<ItemRequest> findAllByRequestorId(@Param("requestorId") long requestorId);
 
-    Page<ItemRequest> findAllByRequesterIdNotOrderByCreatedDesc(Long requesterId, Pageable pageable);
+    @Modifying
+    @Query("UPDATE ItemRequest SET description = :description WHERE id = :id")
+    void updateDescription(@Param("id") long id, @Param("description") String description);
 }

@@ -24,6 +24,7 @@ public class ItemDto {
     private Boolean available;
     private UserDto owner;
     private ItemRequest request;
+    private Long requestId;
     private BookingShortDto lastBooking;
     private BookingShortDto nextBooking;
     private List<CommentDto> comments;

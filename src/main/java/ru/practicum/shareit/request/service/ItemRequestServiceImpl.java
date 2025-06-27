@@ -1,96 +1,169 @@
 package ru.practicum.shareit.request.service;
 
+import jakarta.persistence.PersistenceException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.shareit.exception.AccessError;
 import ru.practicum.shareit.exception.NotFoundException;
+import ru.practicum.shareit.exception.UserNotFoundException;
+import ru.practicum.shareit.enums.Actions;
+import ru.practicum.shareit.item.dto.ItemRequestCreateDto;
 import ru.practicum.shareit.item.mapper.ItemMapper;
+import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.ItemRepository;
+import ru.practicum.shareit.request.dto.CreateItemRequestDto;
 import ru.practicum.shareit.request.dto.ItemRequestDto;
-import ru.practicum.shareit.request.dto.ItemResponseDto;
+import ru.practicum.shareit.request.dto.ItemRequestMapper;
 import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.request.repository.ItemRequestRepository;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
-import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
+@Transactional(readOnly = true)
 public class ItemRequestServiceImpl implements ItemRequestService {
-    private final ItemRequestRepository requestRepository;
+
     private final UserRepository userRepository;
+    private final ItemRequestRepository requestRepository;
     private final ItemRepository itemRepository;
-    private final ItemMapper itemMapper;
 
     @Override
-    public ItemRequestDto createRequest(Long userId, ItemRequestDto requestDto) {
-        User requester = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found"));
+    @Transactional
+    public ItemRequestDto createItemRequest(CreateItemRequestDto itemRequestDto, long userId) {
+        try {
+            User requester = userRepository.findById(userId)
+                    .orElseThrow(() -> new UserNotFoundException(userId));
 
-        ItemRequest request = ItemRequest.builder()
-                .description(requestDto.getDescription())
-                .requestor(requester)
-                .created(LocalDateTime.now())
-                .build();
+            ItemRequest itemRequest = ItemRequestMapper.fromCreateDto(itemRequestDto, requester);
+            ItemRequest saved = requestRepository.save(itemRequest);
 
-        ItemRequest savedRequest = requestRepository.save(request);
-        return toDto(savedRequest);
+            return ItemRequestMapper.toDto(saved);
+        } catch (DataAccessException e) {
+            log.error("Database error while creating item request: {}", e.getMessage());
+            throw new PersistenceException("Failed to save item request due to database error", e);
+        }
     }
 
     @Override
-    public List<ItemRequestDto> getUserRequests(Long userId) {
+    public Collection<ItemRequestDto> getAllItemRequest() {
+        List<ItemRequest> allRequests = requestRepository.findAll();
+        List<Item> allItems = getItemsForListRequests(
+                allRequests.stream().map(ItemRequest::getId).toList()
+        );
+
+        return allRequests.stream()
+                .map(request -> ItemRequestMapper.toDto(  // Используем toDto
+                        request,
+                        getItemRequestCreateDto(request.getId(), allItems)))
+                .toList();
+    }
+
+    @Override
+    public ItemRequestDto getItemRequestById(long itemRequestId) {
+        ItemRequest itemRequest = getItemRequestOrThrow(itemRequestId, Actions.TO_VIEW);
+        return ItemRequestMapper.toDto(  // Используем toDto
+                itemRequest,
+                getItemRequestCreateDto(itemRequestId));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Collection<ItemRequestDto> getAllItemRequestsFromRequestor(long requesterId) {
+        log.debug("Checking user {}", requesterId);
+        getUserOrThrow(requesterId);
+
+        log.debug("Finding requests for user {}", requesterId);
+        List<ItemRequest> requests = requestRepository.findAllByRequestorId(requesterId);
+
+        log.debug("Found {} requests", requests.size());
+        List<Long> requestIds = requests.stream().map(ItemRequest::getId).toList();
+
+        log.debug("Finding items for requests");
+        List<Item> items = itemRepository.findAllByRequestIdIn(requestIds);
+
+        return requests.stream()
+                .map(request -> {
+                    List<ItemRequestCreateDto> requestItems = items.stream()
+                            .filter(item -> request.getId().equals(item.getRequest().getId()))
+                            .map(ItemMapper::toItemRequestCreateDto)
+                            .toList();
+                    return ItemRequestMapper.toDto(request, requestItems);  // Используем toDto
+                })
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public ItemRequestDto updateItemRequest(CreateItemRequestDto itemReqDtoForUpdate, long userId, long itemReqId) {
+        ItemRequest itemReq = getItemRequestOrThrow(itemReqId, Actions.TO_UPDATE);
+
+        if (!itemReq.getRequestor().getId().equals(userId)) {
+            throw new AccessError("У вас нет права на редактирование");
+        }
+
+        if (itemReqDtoForUpdate.getDescription() != null) {
+            ItemRequestMapper.updateFromDto(itemReq, itemReqDtoForUpdate);
+            requestRepository.save(itemReq);
+        }
+
+        return ItemRequestMapper.toDto(itemReq, getItemRequestCreateDto(itemReqId));
+    }
+
+    @Override
+    public void deleteItemRequest(long itemRequestId, long userId) {
+        ItemRequest itemRequest = getItemRequestOrThrow(itemRequestId, Actions.TO_DELETE);
+
+        if (itemRequest.getRequestor().getId() != userId) {
+            throw new AccessError("У вас нет права на удаление");
+        }
+
+        requestRepository.deleteById(itemRequestId);
+    }
+
+    private ItemRequest getItemRequestOrThrow(long requestId, String message) {
+        Optional<ItemRequest> optionalItemRequest = requestRepository.findById(requestId);
+        if (optionalItemRequest.isEmpty()) {
+            throw new NotFoundException(String.format("Запроса с id = %d для %s не найдено", requestId, message));
+        }
+        return optionalItemRequest.get();
+    }
+
+    private void getUserOrThrow(Long userId) {
         userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found"));
-
-        return requestRepository.findAllByRequesterIdOrderByCreatedDesc(userId).stream()
-                .map(this::toDto)
-                .collect(Collectors.toList());
+                .orElseThrow(() -> {
+                    log.error("User not found: {}", userId);
+                    return new UserNotFoundException(userId);
+                });
     }
 
-    @Override
-    public List<ItemRequestDto> getAllRequests(Long userId, int from, int size) {
-        userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found"));
-
-        Pageable page = PageRequest.of(from / size, size);
-        return requestRepository.findAllByRequesterIdNotOrderByCreatedDesc(userId, page)
-                .stream()
-                .map(this::toDto)
-                .collect(Collectors.toList());
+    private List<ItemRequestCreateDto> getItemRequestCreateDto(long requestId) {
+        return itemRepository.findAllByRequestId(requestId).stream()
+                .map(ItemMapper::toItemRequestCreateDto)
+                .toList();
     }
 
-    @Override
-    public ItemRequestDto getRequestById(Long userId, Long requestId) {
-        userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found"));
+    private List<ItemRequestCreateDto> getItemRequestCreateDto(long requestId, List<Item> allItems) {
+        List<Item> itemsRequestCreate = allItems.stream()
+                .filter(item -> item.getRequest().getId() == requestId)
+                .toList();
 
-        ItemRequest request = requestRepository.findById(requestId)
-                .orElseThrow(() -> new NotFoundException("Request not found"));
+        allItems.removeAll(itemsRequestCreate);
 
-        return toDto(request);
+        return itemsRequestCreate.stream()
+                .map(ItemMapper::toItemRequestCreateDto)
+                .toList();
     }
 
-    private ItemRequestDto toDto(ItemRequest request) {
-        List<ItemResponseDto> items = itemRepository.findAllByRequestId(request.getId()).stream()
-                .map(item -> ItemResponseDto.builder()
-                        .id(item.getId())
-                        .name(item.getName())
-                        .description(item.getDescription())
-                        .available(item.getAvailable())
-                        .requestId(item.getRequest() != null ? item.getRequest().getId() : null)
-                        .ownerId(item.getOwner() != null ? item.getOwner().getId() : null)
-                        .build())
-                .collect(Collectors.toList());
-
-        return ItemRequestDto.builder()
-                .id(request.getId())
-                .description(request.getDescription())
-                .created(request.getCreated())
-                .items(items)
-                .build();
+    private List<Item> getItemsForListRequests(List<Long> requestIds) {
+        return itemRepository.findAllByRequestIdIn(requestIds);
     }
 }

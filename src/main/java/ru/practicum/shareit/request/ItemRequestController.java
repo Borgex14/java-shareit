@@ -1,44 +1,57 @@
 package ru.practicum.shareit.request;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.shareit.request.dto.CreateItemRequestDto;
 import ru.practicum.shareit.request.dto.ItemRequestDto;
 import ru.practicum.shareit.request.service.ItemRequestService;
 
-import java.util.List;
+import java.util.Collection;
 
+@Slf4j
 @RestController
-@RequestMapping("/requests")
+@RequestMapping(path = "/requests")
 @RequiredArgsConstructor
 public class ItemRequestController {
-    private final ItemRequestService requestService;
+    private final ItemRequestService itemRequestService;
+    private static final String USER_ID_HEADER = "X-Sharer-User-Id";
 
     @PostMapping
-    public ResponseEntity<ItemRequestDto> createRequest(
-            @RequestBody ItemRequestDto requestDto,
-            @RequestHeader("X-Sharer-User-Id") Long userId) {
-        return ResponseEntity.ok(requestService.createRequest(userId, requestDto));
+    public ItemRequestDto createItemRequest(
+            @RequestBody @Valid CreateItemRequestDto itemRequestDto,
+            @RequestHeader(USER_ID_HEADER) long userId) {
+        return itemRequestService.createItemRequest(itemRequestDto, userId);
     }
 
     @GetMapping
-    public ResponseEntity<List<ItemRequestDto>> getUserRequests(
-            @RequestHeader("X-Sharer-User-Id") Long userId) {
-        return ResponseEntity.ok(requestService.getUserRequests(userId));
+    public Collection<ItemRequestDto> getAllItemRequestsFromRequestor(
+            @RequestHeader(USER_ID_HEADER) long requesterId) {
+        log.info("Getting requests for user {}", requesterId);
+        return itemRequestService.getAllItemRequestsFromRequestor(requesterId);
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<ItemRequestDto>> getAllRequests(
-            @RequestHeader("X-Sharer-User-Id") Long userId,
-            @RequestParam(defaultValue = "0") int from,
-            @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(requestService.getAllRequests(userId, from, size));
+    public Collection<ItemRequestDto> getAllItemRequests() {
+        return itemRequestService.getAllItemRequest();
     }
 
-    @GetMapping("/{requestId}")
-    public ResponseEntity<ItemRequestDto> getRequestById(
-            @RequestHeader("X-Sharer-User-Id") Long userId,
-            @PathVariable Long requestId) {
-        return ResponseEntity.ok(requestService.getRequestById(userId, requestId));
+    @GetMapping("/{itemRequestId}")
+    public ItemRequestDto getItemRequestById(@PathVariable long itemRequestId) {
+        return itemRequestService.getItemRequestById(itemRequestId);
+    }
+
+    @PatchMapping("/{itemReqId}")
+    public ItemRequestDto updateItemRequest(@RequestBody CreateItemRequestDto itemReqDtoForUpdate,
+                                            @RequestHeader(USER_ID_HEADER) long userId,
+                                            @PathVariable long itemReqId) {
+        return itemRequestService.updateItemRequest(itemReqDtoForUpdate, userId, itemReqId);
+    }
+
+    @DeleteMapping("/{itemRequestId}")
+    public void deleteItemRequest(@PathVariable long itemRequestId,
+                                            @RequestHeader(USER_ID_HEADER) long userId) {
+        itemRequestService.deleteItemRequest(itemRequestId, userId);
     }
 }

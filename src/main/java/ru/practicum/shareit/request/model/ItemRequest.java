@@ -19,7 +19,7 @@ public class ItemRequest {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 512)
     private String description;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -29,6 +29,13 @@ public class ItemRequest {
     @Column(nullable = false)
     private LocalDateTime created;
 
-    @OneToMany(mappedBy = "request")
+    @PrePersist
+    public void prePersist() {
+        if (created == null) {
+            created = LocalDateTime.now();
+        }
+    }
+
+    @OneToMany(mappedBy = "request", fetch = FetchType.LAZY)
     private List<Item> items;
 }
