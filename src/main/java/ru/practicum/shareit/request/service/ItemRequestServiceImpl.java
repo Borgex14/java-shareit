@@ -61,7 +61,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
         );
 
         return allRequests.stream()
-                .map(request -> ItemRequestMapper.toDto(  // Используем toDto
+                .map(request -> ItemRequestMapper.toDto(
                         request,
                         getItemRequestCreateDto(request.getId(), allItems)))
                 .toList();
@@ -70,7 +70,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     @Override
     public ItemRequestDto getItemRequestById(long itemRequestId) {
         ItemRequest itemRequest = getItemRequestOrThrow(itemRequestId, Actions.TO_VIEW);
-        return ItemRequestMapper.toDto(  // Используем toDto
+        return ItemRequestMapper.toDto(
                 itemRequest,
                 getItemRequestCreateDto(itemRequestId));
     }
