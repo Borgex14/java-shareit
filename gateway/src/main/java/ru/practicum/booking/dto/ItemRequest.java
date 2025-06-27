@@ -1,0 +1,39 @@
+package ru.practicum.booking.dto;
+
+import jakarta.persistence.*;
+import lombok.*;
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Entity
+@Table(name = "requests")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class ItemRequest {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, length = 512)
+    private String description;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "requestor_id", nullable = false)
+    private User requestor;
+
+    @Column(nullable = false)
+    private LocalDateTime created;
+
+    @PrePersist
+    public void prePersist() {
+        if (created == null) {
+            created = LocalDateTime.now();
+        }
+    }
+
+    @OneToMany(mappedBy = "request", fetch = FetchType.LAZY)
+    private List<Item> items;
+}
