@@ -20,7 +20,7 @@ public class Item {
     @Column(name = "name", nullable = false, length = 255)
     private String name;
 
-    @Column(name = "description")
+    @Column(name = "description", nullable = false)
     private String description;
 
     @Column(name = "is_available", nullable = false)

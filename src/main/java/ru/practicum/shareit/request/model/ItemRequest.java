@@ -2,8 +2,10 @@ package ru.practicum.shareit.request.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.model.User;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "requests")
@@ -17,7 +19,7 @@ public class ItemRequest {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 512)
     private String description;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -26,4 +28,14 @@ public class ItemRequest {
 
     @Column(nullable = false)
     private LocalDateTime created;
+
+    @PrePersist
+    public void prePersist() {
+        if (created == null) {
+            created = LocalDateTime.now();
+        }
+    }
+
+    @OneToMany(mappedBy = "request", fetch = FetchType.LAZY)
+    private List<Item> items;
 }

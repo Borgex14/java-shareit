@@ -1,6 +1,7 @@
 package ru.practicum.shareit.handler;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -26,14 +27,17 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidationExceptions(
-            MethodArgumentNotValidException ex) {
-        log.warn("Validation exception: {}", ex.getMessage());
+    protected ResponseEntity<Object> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        log.error("Validation error: ", ex);
+
         Map<String, String> errors = new HashMap<>();
-        for (FieldError error : ex.getBindingResult().getFieldErrors()) {
-            errors.put(error.getField(), error.getDefaultMessage());
-        }
-        return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
+        ex.getBindingResult().getAllErrors().forEach(error -> {
+            String fieldName = ((FieldError) error).getField();
+            String message = error.getDefaultMessage();
+            errors.put(fieldName, message);
+        });
+
+        return ResponseEntity.badRequest().body(errors);
     }
 
     @ExceptionHandler(ResponseStatusException.class)
@@ -52,11 +56,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, String>> handleOtherExceptions(Exception e) {
-        log.error("Unexpected error: {}", e.getMessage(), e);
+    @ExceptionHandler({Exception.class, RuntimeException.class})
+    public ResponseEntity<Map<String, String>> handleAllUncaughtExceptions(Exception ex) {
+        log.error("Unhandled exception occurred: {}", ex.getMessage(), ex);
         Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put("error", "Internal server error");
+        errorResponse.put("error", "Internal server error. Please contact support.");
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 
@@ -98,5 +102,13 @@ public class GlobalExceptionHandler {
         Map<String, String> errorResponse = new HashMap<>();
         errorResponse.put("error", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, String>> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        log.error("Data integrity violation: {}", ex.getMessage(), ex);
+        Map<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("error", "Database integrity violation");
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
 }
