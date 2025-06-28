@@ -18,8 +18,13 @@ import java.util.List;
 @Builder
 public class ItemDto {
     private Long id;
+    @NotBlank
     private String name;
+
+    @NotBlank
     private String description;
+
+    @NotNull
     private Boolean available;
     private UserDto owner;
     private ItemRequest request;
@@ -27,11 +32,4 @@ public class ItemDto {
     private BookingShortDto lastBooking;
     private BookingShortDto nextBooking;
     private List<CommentDto> comments;
-
-    @Data
-    @Builder
-    public static class Booking {
-        private Long id;
-        private Long bookerId;
-    }
 }

@@ -17,6 +17,7 @@ import ru.practicum.shareit.item.mapper.ItemMapper;
 import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.ItemRepository;
+import ru.practicum.shareit.request.repository.ItemRequestRepository;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 import ru.practicum.shareit.booking.state.BookingStatus;
@@ -43,7 +44,7 @@ public class ItemServiceImpl implements ItemService {
     private final ItemMapper itemMapper;
 
     @Autowired
-    public ItemServiceImpl(ItemRepository itemRepository, UserRepository userRepository, BookingRepository bookingRepository, CommentRepository commentRepository, ItemMapper itemMapper) {
+    public ItemServiceImpl(ItemRepository itemRepository, UserRepository userRepository, BookingRepository bookingRepository, CommentRepository commentRepository, ItemRequestRepository itemRequestRepository, ItemMapper itemMapper) {
         this.itemRepository = itemRepository;
         this.userRepository = userRepository;
         this.bookingRepository = bookingRepository;
@@ -56,27 +57,24 @@ public class ItemServiceImpl implements ItemService {
                 .orElseThrow(() -> new NotFoundException("Вещь с id " + itemId + " не найдена"));
     }
 
-    @Override
     @Transactional
-    public ItemDto addItem(Long userId, ItemCreateDto createDto) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователь с id " + userId + " не найден"));
+    public ItemDto addItem(Long userId, ItemDto itemDto) {
+            validateItemData(itemDto);
+            getUserOrThrow(userId);
+            Item savedItem = itemRepository.save(itemMapper.toEntity(itemDto));
+            return itemMapper.toFullDto(savedItem, null, null, getCommentDtoToItemDto(savedItem.getId()));
+    }
 
-        Item item = itemMapper.fromCreateDto(createDto);
-        item.setOwner(user);
-
-        if (item.getName() == null || item.getName().isBlank()) {
-            throw new IllegalArgumentException("Название вещи не может быть пустым");
+    private void validateItemData(ItemDto itemDto) {
+        if (itemDto.getName() == null || itemDto.getName().isBlank()) {
+            throw new IllegalArgumentException("Item name cannot be empty");
         }
-        if (item.getDescription() == null || item.getDescription().isBlank()) {
-            throw new IllegalArgumentException("Описание вещи не может быть пустым");
+        if (itemDto.getDescription() == null || itemDto.getDescription().isBlank()) {
+            throw new IllegalArgumentException("Item description cannot be empty");
         }
-        if (item.getAvailable() == null) {
-            throw new IllegalArgumentException("Статус доступности вещи должен быть указан");
+        if (itemDto.getAvailable() == null) {
+            throw new IllegalArgumentException("Item availability must be specified");
         }
-
-        Item savedItem = itemRepository.save(item);
-        return itemMapper.toFullDto(savedItem, null, null, Collections.emptyList());
     }
 
     @Override
@@ -280,5 +278,11 @@ public class ItemServiceImpl implements ItemService {
         return itemRepository.searchAvailableItems(text.toLowerCase()).stream()
                 .map(item -> itemMapper.toFullDto(item, null, null, Collections.emptyList()))
                 .collect(Collectors.toList());
+    }
+
+    private List<CommentDto> getCommentDtoToItemDto(long itemId) {
+        return commentRepository.findByItemId(itemId).stream()
+                .map(CommentMapper::mapCommentToDto)
+                .toList();
     }
 }

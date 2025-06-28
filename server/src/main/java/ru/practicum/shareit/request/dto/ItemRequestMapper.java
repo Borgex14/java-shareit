@@ -7,36 +7,37 @@ import ru.practicum.shareit.user.model.User;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @UtilityClass
 public class ItemRequestMapper {
-    // Создание из DTO
     public static ItemRequest fromCreateDto(CreateItemRequestDto dto, User requester) {
         if (dto == null || requester == null) return null;
         return ItemRequest.builder()
                 .description(dto.getDescription())
-                .requestor(requester)
+                .requestorId(requester.getId())
                 .created(LocalDateTime.now())
                 .build();
     }
 
-    // Преобразование в DTO (полное)
     public static ItemRequestDto toDto(ItemRequest entity, List<ItemRequestCreateDto> items) {
+        Objects.requireNonNull(entity, "Entity must not be null");
+        if (entity.getId() == null) {
+            throw new IllegalStateException("Entity must be persisted before mapping");
+        }
         return ItemRequestDto.builder()
                 .id(entity.getId())
                 .description(entity.getDescription())
-                .requestorId(entity.getRequestor().getId())
+                .requestorId(entity.getRequestorId())
                 .created(entity.getCreated())
                 .items(items)
                 .build();
     }
 
-    // Преобразование без items
     public static ItemRequestDto toDto(ItemRequest entity) {
         return toDto(entity, null);
     }
 
-    // Обновление сущности
     public static void updateFromDto(ItemRequest entity, CreateItemRequestDto dto) {
         if (dto.getDescription() != null) {
             entity.setDescription(dto.getDescription());

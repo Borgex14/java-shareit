@@ -8,10 +8,12 @@ import ru.practicum.shareit.item.dto.ItemCreateDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.service.ItemService;
 
+
 import java.util.List;
 
 @RestController
 @RequestMapping("/items")
+
 public class ItemController {
     private final ItemService itemService;
 
@@ -22,8 +24,8 @@ public class ItemController {
 
     @PostMapping
     public ResponseEntity<ItemDto> addItem(@RequestHeader("X-Sharer-User-Id") Long userId,
-                                           @RequestBody ItemCreateDto createDto) {
-        return ResponseEntity.ok(itemService.addItem(userId, createDto));
+                                           @RequestBody ItemDto itemDto) {
+        return ResponseEntity.ok(itemService.addItem(userId, itemDto));
     }
 
     @PatchMapping("/{itemId}")

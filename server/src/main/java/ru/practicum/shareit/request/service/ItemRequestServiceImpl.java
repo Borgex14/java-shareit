@@ -1,6 +1,7 @@
 package ru.practicum.shareit.request.service;
 
 import jakarta.persistence.PersistenceException;
+import ru.practicum.shareit.exception.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
@@ -24,6 +25,7 @@ import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -42,14 +44,21 @@ public class ItemRequestServiceImpl implements ItemRequestService {
         try {
             User requester = userRepository.findById(userId)
                     .orElseThrow(() -> new UserNotFoundException(userId));
-
+            log.debug("Creating request from DTO: {}", itemRequestDto);
             ItemRequest itemRequest = ItemRequestMapper.fromCreateDto(itemRequestDto, requester);
+            log.debug("Mapped entity before save: {}", itemRequest);
             ItemRequest saved = requestRepository.save(itemRequest);
+            log.debug("Saved entity: {}", saved);
+            if(saved == null) {
+                throw new PersistenceException("Failed to save request");
+            }
+            ItemRequestDto dto = ItemRequestMapper.toDto(saved);
+            log.debug("Result DTO: {}", dto);
 
-            return ItemRequestMapper.toDto(saved);
+            return dto;
         } catch (DataAccessException e) {
             log.error("Database error while creating item request: {}", e.getMessage());
-            throw new PersistenceException("Failed to save item request due to database error", e);
+            throw new ValidationException("Failed to save item request due to database error");
         }
     }
 
@@ -70,9 +79,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     @Override
     public ItemRequestDto getItemRequestById(long itemRequestId) {
         ItemRequest itemRequest = getItemRequestOrThrow(itemRequestId, Actions.TO_VIEW);
-        return ItemRequestMapper.toDto(
-                itemRequest,
-                getItemRequestCreateDto(itemRequestId));
+        return ItemRequestMapper.toDto(itemRequest, getItemRequestCreateDto(itemRequestId));
     }
 
     @Override
@@ -96,7 +103,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
                             .filter(item -> request.getId().equals(item.getRequest().getId()))
                             .map(ItemMapper::toItemRequestCreateDto)
                             .toList();
-                    return ItemRequestMapper.toDto(request, requestItems);  // Используем toDto
+                    return ItemRequestMapper.toDto(request, requestItems);
                 })
                 .toList();
     }
@@ -106,7 +113,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     public ItemRequestDto updateItemRequest(CreateItemRequestDto itemReqDtoForUpdate, long userId, long itemReqId) {
         ItemRequest itemReq = getItemRequestOrThrow(itemReqId, Actions.TO_UPDATE);
 
-        if (!itemReq.getRequestor().getId().equals(userId)) {
+        if (!itemReq.getRequestorId().equals(userId)) {
             throw new AccessError("У вас нет права на редактирование");
         }
 
@@ -122,7 +129,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     public void deleteItemRequest(long itemRequestId, long userId) {
         ItemRequest itemRequest = getItemRequestOrThrow(itemRequestId, Actions.TO_DELETE);
 
-        if (itemRequest.getRequestor().getId() != userId) {
+        if (itemRequest.getRequestorId() != userId) {
             throw new AccessError("У вас нет права на удаление");
         }
 
@@ -147,7 +154,11 @@ public class ItemRequestServiceImpl implements ItemRequestService {
 
     private List<ItemRequestCreateDto> getItemRequestCreateDto(long requestId) {
         return itemRepository.findAllByRequestId(requestId).stream()
-                .map(ItemMapper::toItemRequestCreateDto)
+                .map(item -> {
+                    if (item == null) return null;
+                    return ItemMapper.toItemRequestCreateDto(item);
+                })
+                .filter(Objects::nonNull)
                 .toList();
     }
 

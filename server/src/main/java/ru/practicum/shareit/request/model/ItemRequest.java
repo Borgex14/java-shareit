@@ -1,6 +1,8 @@
 package ru.practicum.shareit.request.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.model.User;
@@ -9,8 +11,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "requests")
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -19,23 +20,15 @@ public class ItemRequest {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 512)
+    @NotBlank
+    @Column(name = "description")
     private String description;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "requestor_id", nullable = false)
-    private User requestor;
+    @NotNull
+    @Column(name = "requestor_id")
+    private Long requestorId;
 
-    @Column(nullable = false)
+    @NotNull
+    @Column(name = "created")
     private LocalDateTime created;
-
-    @PrePersist
-    public void prePersist() {
-        if (created == null) {
-            created = LocalDateTime.now();
-        }
-    }
-
-    @OneToMany(mappedBy = "request", fetch = FetchType.LAZY)
-    private List<Item> items;
 }

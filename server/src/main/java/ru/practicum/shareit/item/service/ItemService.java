@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface ItemService {
 
-    ItemDto addItem(Long userID, ItemCreateDto createDto);
+    ItemDto addItem(Long userID, ItemDto itemDto);
 
     @Transactional
     CommentDto addComment(Long bookerId, Long itemId, CommentDto dto);

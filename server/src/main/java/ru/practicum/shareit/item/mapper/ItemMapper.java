@@ -9,10 +9,12 @@ import ru.practicum.shareit.item.dto.ItemRequestCreateDto;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemCreateDto;
+import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.user.mapper.UserMapper;
 
 
 import java.util.List;
+
 
 @Mapper(componentModel = "spring", uses = UserMapper.class)
 public interface ItemMapper {
@@ -47,16 +49,27 @@ public interface ItemMapper {
     @Mapping(target = "available", source = "available")
     @Mapping(target = "owner", source = "owner")
     @Mapping(target = "request", source = "request")
-    Item toEntity(ItemDto dto);
+    Item toEntity(ItemDto itemDto);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "name", source = "name")
-    @Mapping(target = "description", source = "description")
-    @Mapping(target = "available", source = "available")
     @Mapping(target = "owner", ignore = true)
+    @Mapping(target = "request", ignore = true)
     Item fromCreateDto(ItemCreateDto createDto);
 
+    default Item fromCreateDto(ItemCreateDto createDto, ItemRequest request) {
+        Item item = fromCreateDto(createDto);
+        item.setRequest(request);
+        return item;
+    }
+
     static ItemRequestCreateDto toItemRequestCreateDto(Item item) {
-        return new ItemRequestCreateDto(item.getId(), item.getName(), item.getOwner().getId());
+        if (item == null) {
+            return null;
+        }
+        return ItemRequestCreateDto.builder()
+                .id(item.getId())
+                .name(item.getName())
+                .ownerId(item.getOwner() != null ? item.getOwner().getId() : null)
+                .build();
     }
 }

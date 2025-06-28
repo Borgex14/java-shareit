@@ -9,8 +9,8 @@ import ru.practicum.shareit.request.model.ItemRequest;
 import java.util.List;
 
 public interface ItemRequestRepository extends JpaRepository<ItemRequest, Long> {
-    @Query("SELECT r FROM ItemRequest r JOIN FETCH r.requestor WHERE r.requestor.id = :requestorId")
-    List<ItemRequest> findAllByRequestorId(@Param("requestorId") long requestorId);
+
+    List<ItemRequest> findAllByRequestorId(Long requestorId);
 
     @Modifying
     @Query("UPDATE ItemRequest SET description = :description WHERE id = :id")
