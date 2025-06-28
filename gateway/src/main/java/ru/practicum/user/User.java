@@ -1,4 +1,4 @@
-package ru.practicum.booking.dto;
+package ru.practicum.user;
 
 import jakarta.persistence.*;
 import lombok.*;

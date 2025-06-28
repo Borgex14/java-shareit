@@ -1,8 +1,5 @@
 package ru.practicum.shareit.booking;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.booking.dto.BookingRequestDto;
@@ -21,7 +18,7 @@ public class BookingController {
     @PostMapping
     public BookingResponseDto createBooking(
             @RequestHeader("X-Sharer-User-Id") Long userId,
-            @Valid @RequestBody BookingRequestDto bookingRequestDto) {
+            @RequestBody BookingRequestDto bookingRequestDto) {
         return bookingService.createBooking(userId, bookingRequestDto);
     }
 
@@ -44,8 +41,8 @@ public class BookingController {
     public List<BookingResponseDto> getUserBookings(
             @RequestHeader("X-Sharer-User-Id") Long userId,
             @RequestParam(defaultValue = "ALL") BookingFilterState state,
-            @RequestParam(defaultValue = "0") @PositiveOrZero Integer from,
-            @RequestParam(defaultValue = "10") @Positive Integer size) {
+            @RequestParam(defaultValue = "0") Integer from,
+            @RequestParam(defaultValue = "10") Integer size) {
         return bookingService.getUserBookings(userId, state, from, size);
     }
 
@@ -53,8 +50,8 @@ public class BookingController {
     public List<BookingResponseDto> getOwnerBookings(
             @RequestHeader("X-Sharer-User-Id") Long userId,
             @RequestParam(defaultValue = "ALL") BookingFilterState state,
-            @RequestParam(defaultValue = "0") @PositiveOrZero Integer from,
-            @RequestParam(defaultValue = "10") @Positive Integer size) {
+            @RequestParam(defaultValue = "0") Integer from,
+            @RequestParam(defaultValue = "10") Integer size) {
         return bookingService.getOwnerBookings(userId, state, from, size);
     }
 }

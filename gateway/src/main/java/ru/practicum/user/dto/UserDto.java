@@ -1,4 +1,4 @@
-package ru.practicum.booking.dto;
+package ru.practicum.user.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;

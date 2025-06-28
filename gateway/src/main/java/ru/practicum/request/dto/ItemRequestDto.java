@@ -1,24 +1,26 @@
-package ru.practicum.booking.dto;
+package ru.practicum.request.dto;
+
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import ru.practicum.Item.dto.ItemRequestCreateDto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
-@NoArgsConstructor
 @AllArgsConstructor
-public class CommentDto {
+@NoArgsConstructor
+public class ItemRequestDto {
     private Long id;
-
-    @NotBlank(message = "Текст комментария не может быть пустым")
-    private String text;
-
-    private Item item;
-    private String authorName;
+    @NotBlank
+    private String description;
+    private long requestorId;
     private LocalDateTime created;
+
+    private List<ItemRequestCreateDto> items;
 }

@@ -1,7 +1,10 @@
-package ru.practicum.booking.dto;
+package ru.practicum.request;
 
 import jakarta.persistence.*;
 import lombok.*;
+import ru.practicum.Item.Item;
+import ru.practicum.user.User;
+
 import java.time.LocalDateTime;
 import java.util.List;
 

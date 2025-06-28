@@ -1,7 +1,9 @@
-package ru.practicum.booking.dto;
+package ru.practicum.Item;
 
 import jakarta.persistence.*;
 import lombok.*;
+import ru.practicum.request.ItemRequest;
+import ru.practicum.user.User;
 
 @Entity
 @Table(name = "items")

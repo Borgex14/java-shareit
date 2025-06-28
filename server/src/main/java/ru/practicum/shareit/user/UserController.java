@@ -1,6 +1,5 @@
 package ru.practicum.shareit.user;
 
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,7 +13,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/users")
 public class UserController {
-
     private final UserService userService;
 
     @Autowired
@@ -23,9 +21,8 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<UserDto> createUser(@Valid @RequestBody UserCreateDto createDto) {
-        UserDto createdUser = userService.createUser(createDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+    public ResponseEntity<UserDto> createUser(@RequestBody UserCreateDto createDto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(createDto));
     }
 
     @GetMapping

@@ -1,6 +1,5 @@
 package ru.practicum.shareit.item;
 
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,7 +13,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/items")
 public class ItemController {
-
     private final ItemService itemService;
 
     @Autowired
@@ -24,7 +22,7 @@ public class ItemController {
 
     @PostMapping
     public ResponseEntity<ItemDto> addItem(@RequestHeader("X-Sharer-User-Id") Long userId,
-                                           @Valid @RequestBody ItemCreateDto createDto) {
+                                           @RequestBody ItemCreateDto createDto) {
         return ResponseEntity.ok(itemService.addItem(userId, createDto));
     }
 
@@ -44,21 +42,19 @@ public class ItemController {
 
     @GetMapping
     public ResponseEntity<List<ItemDto>> getOwnerItems(@RequestHeader("X-Sharer-User-Id") Long userId) {
-        List<ItemDto> items = itemService.getItemsByOwnerId(userId);
-        return ResponseEntity.ok(items);
+        return ResponseEntity.ok(itemService.getItemsByOwnerId(userId));
     }
 
     @GetMapping("/search")
     public ResponseEntity<List<ItemDto>> searchItems(@RequestParam String text) {
-        List<ItemDto> results = itemService.searchItems(text);
-        return ResponseEntity.ok(results);
+        return ResponseEntity.ok(itemService.searchItems(text));
     }
 
     @PostMapping("/{itemId}/comment")
     public ResponseEntity<CommentDto> addComment(
             @RequestHeader("X-Sharer-User-Id") Long userId,
             @PathVariable Long itemId,
-            @Valid @RequestBody CommentDto dto) {
+            @RequestBody CommentDto dto) {
         return ResponseEntity.ok(itemService.addComment(userId, itemId, dto));
     }
 }

@@ -1,8 +1,6 @@
 package ru.practicum.shareit.request;
 
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.request.dto.CreateItemRequestDto;
 import ru.practicum.shareit.request.dto.ItemRequestDto;
@@ -10,7 +8,6 @@ import ru.practicum.shareit.request.service.ItemRequestService;
 
 import java.util.Collection;
 
-@Slf4j
 @RestController
 @RequestMapping(path = "/requests")
 @RequiredArgsConstructor
@@ -20,7 +17,7 @@ public class ItemRequestController {
 
     @PostMapping
     public ItemRequestDto createItemRequest(
-            @RequestBody @Valid CreateItemRequestDto itemRequestDto,
+            @RequestBody CreateItemRequestDto itemRequestDto,
             @RequestHeader(USER_ID_HEADER) long userId) {
         return itemRequestService.createItemRequest(itemRequestDto, userId);
     }
@@ -28,7 +25,6 @@ public class ItemRequestController {
     @GetMapping
     public Collection<ItemRequestDto> getAllItemRequestsFromRequestor(
             @RequestHeader(USER_ID_HEADER) long requesterId) {
-        log.info("Getting requests for user {}", requesterId);
         return itemRequestService.getAllItemRequestsFromRequestor(requesterId);
     }
 
@@ -51,7 +47,7 @@ public class ItemRequestController {
 
     @DeleteMapping("/{itemRequestId}")
     public void deleteItemRequest(@PathVariable long itemRequestId,
-                                            @RequestHeader(USER_ID_HEADER) long userId) {
+                                  @RequestHeader(USER_ID_HEADER) long userId) {
         itemRequestService.deleteItemRequest(itemRequestId, userId);
     }
 }
