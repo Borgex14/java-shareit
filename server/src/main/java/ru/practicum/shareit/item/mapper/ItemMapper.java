@@ -27,7 +27,7 @@ public interface ItemMapper {
     @Mapping(target = "nextBooking", source = "nextBooking")
     @Mapping(target = "comments", source = "comments")
     ItemDto toFullDto(Item item, BookingShortDto lastBooking,
-                      BookingShortDto nextBooking, List<CommentDto> comments);
+                             BookingShortDto nextBooking, List<CommentDto> comments);
 
     @Mapping(target = "id", source = "id")
     @Mapping(target = "name", source = "name")

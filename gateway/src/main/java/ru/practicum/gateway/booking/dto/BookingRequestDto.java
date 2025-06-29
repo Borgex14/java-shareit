@@ -10,14 +10,14 @@ import java.time.LocalDateTime;
 
 @Data
 public class BookingRequestDto {
-    @NotNull
+    @NotNull(message = "Item ID cannot be null")
     private Long itemId;
 
-    @FutureOrPresent
-    @NotNull
+    @NotNull(message = "Start time cannot be null")
+    @FutureOrPresent(message = "Start time must be in present or future")
     private LocalDateTime start;
 
-    @Future
-    @NotNull
+    @NotNull(message = "End time cannot be null")
+    @Future(message = "End time must be in future")
     private LocalDateTime end;
 }

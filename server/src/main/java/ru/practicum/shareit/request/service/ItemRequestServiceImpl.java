@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.exception.AccessError;
 import ru.practicum.shareit.exception.NotFoundException;
-import ru.practicum.shareit.exception.UserNotFoundException;
 import ru.practicum.shareit.enums.Actions;
 import ru.practicum.shareit.item.dto.ItemRequestCreateDto;
 import ru.practicum.shareit.item.mapper.ItemMapper;
@@ -43,7 +42,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     public ItemRequestDto createItemRequest(CreateItemRequestDto itemRequestDto, long userId) {
         try {
             User requester = userRepository.findById(userId)
-                    .orElseThrow(() -> new UserNotFoundException(userId));
+                    .orElseThrow(() -> new NotFoundException("User with id=" + userId + " not found"));
             log.debug("Creating request from DTO: {}", itemRequestDto);
             ItemRequest itemRequest = ItemRequestMapper.fromCreateDto(itemRequestDto, requester);
             log.debug("Mapped entity before save: {}", itemRequest);
@@ -148,7 +147,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
         userRepository.findById(userId)
                 .orElseThrow(() -> {
                     log.error("User not found: {}", userId);
-                    return new UserNotFoundException(userId);
+                    return new NotFoundException("User with id=" + userId + " not found");
                 });
     }
 

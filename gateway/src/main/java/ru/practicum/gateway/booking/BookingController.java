@@ -19,7 +19,7 @@ public class BookingController {
     @PostMapping
     public ResponseEntity<Object> createBooking(
             @RequestHeader("X-Sharer-User-Id") long userId,
-            @Valid @RequestBody BookingRequestDto requestDto) {
+            @RequestBody @Valid BookingRequestDto requestDto) {
         return bookingClient.createBooking(userId, requestDto);
     }
 

@@ -61,8 +61,14 @@ public class ItemServiceImpl implements ItemService {
     public ItemDto addItem(Long userId, ItemDto itemDto) {
             validateItemData(itemDto);
             getUserOrThrow(userId);
-            Item savedItem = itemRepository.save(itemMapper.toEntity(itemDto));
-            return itemMapper.toFullDto(savedItem, null, null, getCommentDtoToItemDto(savedItem.getId()));
+        Item item = createItem(itemMapper.toEntity(itemDto), userId);
+        return itemMapper.toFullDto(item, null, null, getCommentDtoToItemDto(item.getId()));
+    }
+
+    private Item createItem(Item item, Long ownerId) {
+        User owner = getUserOrThrow(ownerId);
+        item.setOwner(owner);
+        return itemRepository.save(item);
     }
 
     private void validateItemData(ItemDto itemDto) {

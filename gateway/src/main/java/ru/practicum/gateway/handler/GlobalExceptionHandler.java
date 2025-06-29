@@ -56,14 +56,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 
-    @ExceptionHandler(ru.practicum.shareit.exception.UserNotFoundException.class)
-    public ResponseEntity<Map<String, String>> handleUserNotFound(ru.practicum.shareit.exception.UserNotFoundException ex) {
-        log.warn("User not found: {}", ex.getMessage());
-        Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put("error", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
-    }
-
     @ExceptionHandler({Exception.class, RuntimeException.class})
     public ResponseEntity<Map<String, String>> handleAllUncaughtExceptions(Exception ex) {
         log.error("Unhandled exception occurred: {}", ex.getMessage(), ex);
