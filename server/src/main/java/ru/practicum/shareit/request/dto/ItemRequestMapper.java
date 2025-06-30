@@ -1,36 +1,39 @@
 package ru.practicum.shareit.request.dto;
 
 import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 import ru.practicum.shareit.item.dto.ItemRequestCreateDto;
 import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.user.model.User;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+@Slf4j
 @UtilityClass
 public class ItemRequestMapper {
-    public static ItemRequest fromCreateDto(CreateItemRequestDto dto, User requester) {
-        if (dto == null || requester == null) return null;
+    public static ItemRequest fromCreateDto(CreateItemRequestDto dto, User requestor) {
+        Objects.requireNonNull(requestor, "Requestor cannot be null");
+        if (dto == null) return null;
         return ItemRequest.builder()
                 .description(dto.getDescription())
-                .requestorId(requester.getId())
+                .requestor(requestor)
                 .created(LocalDateTime.now())
                 .build();
     }
 
-    public static ItemRequestDto toDto(ItemRequest entity, List<ItemRequestCreateDto> items) {
-        Objects.requireNonNull(entity, "Entity must not be null");
-        if (entity.getId() == null) {
-            throw new IllegalStateException("Entity must be persisted before mapping");
-        }
+    public static ItemRequestDto toDto(ItemRequest request, List<ItemRequestCreateDto> items) {
+        if (request == null) return null;
+
         return ItemRequestDto.builder()
-                .id(entity.getId())
-                .description(entity.getDescription())
-                .requestorId(entity.getRequestorId())
-                .created(entity.getCreated())
-                .items(items)
+                .id(request.getId())
+                .description(request.getDescription())
+                .requestorId(request.getRequestor() != null ?
+                        request.getRequestor().getId() : null)
+                .created(request.getCreated())
+                .items(items != null ? items : Collections.emptyList())
                 .build();
     }
 

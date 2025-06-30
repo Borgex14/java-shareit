@@ -17,6 +17,7 @@ import ru.practicum.shareit.item.mapper.ItemMapper;
 import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.ItemRepository;
+import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.request.repository.ItemRequestRepository;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
@@ -41,14 +42,16 @@ public class ItemServiceImpl implements ItemService {
     private final UserRepository userRepository;
     private final BookingRepository bookingRepository;
     private final CommentRepository commentRepository;
+    private final ItemRequestRepository requestRepository;
     private final ItemMapper itemMapper;
 
     @Autowired
-    public ItemServiceImpl(ItemRepository itemRepository, UserRepository userRepository, BookingRepository bookingRepository, CommentRepository commentRepository, ItemRequestRepository itemRequestRepository, ItemMapper itemMapper) {
+    public ItemServiceImpl(ItemRepository itemRepository, UserRepository userRepository, BookingRepository bookingRepository, CommentRepository commentRepository, ItemRequestRepository itemRequestRepository, ItemRequestRepository requestRepository, ItemMapper itemMapper) {
         this.itemRepository = itemRepository;
         this.userRepository = userRepository;
         this.bookingRepository = bookingRepository;
         this.commentRepository = commentRepository;
+        this.requestRepository = requestRepository;
         this.itemMapper = itemMapper;
     }
 
@@ -57,12 +60,29 @@ public class ItemServiceImpl implements ItemService {
                 .orElseThrow(() -> new NotFoundException("Вещь с id " + itemId + " не найдена"));
     }
 
+    @Override
     @Transactional
     public ItemDto addItem(Long userId, ItemDto itemDto) {
-            validateItemData(itemDto);
-            getUserOrThrow(userId);
-        Item item = createItem(itemMapper.toEntity(itemDto), userId);
-        return itemMapper.toFullDto(item, null, null, getCommentDtoToItemDto(item.getId()));
+        validateItemData(itemDto);
+
+        User owner = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+
+        Item item = new Item();
+        item.setName(itemDto.getName());
+        item.setDescription(itemDto.getDescription());
+        item.setAvailable(itemDto.getAvailable());
+        item.setOwner(owner); // Устанавливаем владельца
+
+        if (itemDto.getRequestId() != null) {
+            ItemRequest request = requestRepository.findById(itemDto.getRequestId())
+                    .orElseThrow(() -> new NotFoundException("Request not found"));
+            item.setRequest(request);
+        }
+
+        Item savedItem = itemRepository.save(item);
+
+        return itemMapper.toFullDto(savedItem, null, null, Collections.emptyList());
     }
 
     private Item createItem(Item item, Long ownerId) {

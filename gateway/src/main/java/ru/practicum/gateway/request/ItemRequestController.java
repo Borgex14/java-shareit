@@ -10,6 +10,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.gateway.request.dto.CreateItemRequestDto;
 
+import java.util.Collection;
 import java.util.List;
 
 
@@ -31,16 +32,18 @@ public class ItemRequestController {
 
     @GetMapping
     public ResponseEntity<Object> getAllUserRequests(@RequestHeader(USER_ID_HEADER) long userId) {
-        try {
-            ResponseEntity<Object> response = itemRequestClient.getAllUserRequests(userId);
-            if(response == null || response.getBody() == null) {
-                return ResponseEntity.ok(List.of());
-            }
-            return ResponseEntity.ok(response.getBody());
-        } catch (Exception e) {
-            log.error("Failed to get requests for user {}", userId, e);
-            throw e;
+        ResponseEntity<Object> response = itemRequestClient.getAllUserRequests(userId);
+
+        if (response.getStatusCode().isError()) {
+            return response;
         }
+
+        Object body = response.getBody();
+        if (body instanceof Collection) {
+            return ResponseEntity.ok(body);
+        }
+
+        return ResponseEntity.ok(List.of());
     }
 
     @GetMapping("/all")
@@ -57,7 +60,7 @@ public class ItemRequestController {
 
     @GetMapping("/{requestId}")
     public ResponseEntity<Object> getRequestById(
-            @PathVariable long requestId,
+            @Positive @PathVariable long requestId,
             @RequestHeader(USER_ID_HEADER) long userId) {
         return itemRequestClient.getRequestById(requestId, userId);
     }

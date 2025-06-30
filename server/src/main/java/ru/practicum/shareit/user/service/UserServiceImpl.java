@@ -1,7 +1,7 @@
 package ru.practicum.shareit.user.service;
 
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.exception.ConflictException;
@@ -33,12 +33,8 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserDto createUser(UserCreateDto createDto) {
         User user = userMapper.fromCreateDto(createDto);
-        try {
-            User createdUser = userRepository.save(user);
-            return UserMappingUtils.toDto(createdUser);
-        } catch (DataIntegrityViolationException e) {
-            throw new ConflictException("Пользователь с таким email уже существует");
-        }
+        User createdUser = userRepository.save(user);
+        return UserMappingUtils.toDto(createdUser);
     }
 
     @Override

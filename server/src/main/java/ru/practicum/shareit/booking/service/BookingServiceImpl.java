@@ -24,7 +24,6 @@ import ru.practicum.shareit.item.mapper.ItemMapper;
 import ru.practicum.shareit.item.mapper.CommentMapper;
 
 import java.time.LocalDateTime;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -130,7 +129,7 @@ public class BookingServiceImpl implements BookingService {
 
         if (!booking.getBooker().getId().equals(userId) &&
                 !booking.getItem().getOwner().getId().equals(userId)) {
-            throw new NotAuthorizedException("Only booker or owner can view booking details");
+            throw new AccessDeniedException("Only booker or owner can view booking details");
         }
 
         return bookingMapper.toBookingResponseDto(booking);

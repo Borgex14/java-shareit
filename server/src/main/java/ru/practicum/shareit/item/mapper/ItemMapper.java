@@ -2,21 +2,17 @@ package ru.practicum.shareit.item.mapper;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.ReportingPolicy;
 import ru.practicum.shareit.booking.dto.BookingShortDto;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemRequestCreateDto;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.dto.ItemDto;
-import ru.practicum.shareit.item.dto.ItemCreateDto;
-import ru.practicum.shareit.request.model.ItemRequest;
-import ru.practicum.shareit.user.mapper.UserMapper;
-
 
 import java.util.List;
 
-
-@Mapper(componentModel = "spring", uses = UserMapper.class)
+@Mapper(componentModel = "spring")
 public interface ItemMapper {
     @Mapping(target = "id", source = "item.id")
     @Mapping(target = "name", source = "item.name")
@@ -26,8 +22,9 @@ public interface ItemMapper {
     @Mapping(target = "lastBooking", source = "lastBooking")
     @Mapping(target = "nextBooking", source = "nextBooking")
     @Mapping(target = "comments", source = "comments")
+    @Mapping(target = "requestId", source = "item.request.id")
     ItemDto toFullDto(Item item, BookingShortDto lastBooking,
-                             BookingShortDto nextBooking, List<CommentDto> comments);
+                      BookingShortDto nextBooking, List<CommentDto> comments);
 
     @Mapping(target = "id", source = "id")
     @Mapping(target = "name", source = "name")
@@ -47,20 +44,7 @@ public interface ItemMapper {
     @Mapping(target = "name", source = "name")
     @Mapping(target = "description", source = "description")
     @Mapping(target = "available", source = "available")
-    @Mapping(target = "owner", source = "owner")
-    @Mapping(target = "request", source = "request")
     Item toEntity(ItemDto itemDto);
-
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "owner", ignore = true)
-    @Mapping(target = "request", ignore = true)
-    Item fromCreateDto(ItemCreateDto createDto);
-
-    default Item fromCreateDto(ItemCreateDto createDto, ItemRequest request) {
-        Item item = fromCreateDto(createDto);
-        item.setRequest(request);
-        return item;
-    }
 
     static ItemRequestCreateDto toItemRequestCreateDto(Item item) {
         if (item == null) {

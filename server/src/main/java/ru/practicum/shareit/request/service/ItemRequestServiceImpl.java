@@ -1,10 +1,7 @@
 package ru.practicum.shareit.request.service;
 
-import jakarta.persistence.PersistenceException;
-import ru.practicum.shareit.exception.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.exception.AccessError;
@@ -22,10 +19,9 @@ import ru.practicum.shareit.request.repository.ItemRequestRepository;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -40,25 +36,17 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     @Override
     @Transactional
     public ItemRequestDto createItemRequest(CreateItemRequestDto itemRequestDto, long userId) {
-        try {
-            User requester = userRepository.findById(userId)
-                    .orElseThrow(() -> new NotFoundException("User with id=" + userId + " not found"));
-            log.debug("Creating request from DTO: {}", itemRequestDto);
-            ItemRequest itemRequest = ItemRequestMapper.fromCreateDto(itemRequestDto, requester);
-            log.debug("Mapped entity before save: {}", itemRequest);
-            ItemRequest saved = requestRepository.save(itemRequest);
-            log.debug("Saved entity: {}", saved);
-            if(saved == null) {
-                throw new PersistenceException("Failed to save request");
-            }
-            ItemRequestDto dto = ItemRequestMapper.toDto(saved);
-            log.debug("Result DTO: {}", dto);
+        User requester = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User with id=" + userId + " not found"));
 
-            return dto;
-        } catch (DataAccessException e) {
-            log.error("Database error while creating item request: {}", e.getMessage());
-            throw new ValidationException("Failed to save item request due to database error");
-        }
+        ItemRequest itemRequest = ItemRequest.builder()
+                .description(itemRequestDto.getDescription())
+                .requestor(requester)
+                .created(LocalDateTime.now())
+                .build();
+
+        ItemRequest savedRequest = requestRepository.save(itemRequest);
+        return ItemRequestMapper.toDto(savedRequest, Collections.emptyList());
     }
 
     @Override
@@ -78,32 +66,40 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     @Override
     public ItemRequestDto getItemRequestById(long itemRequestId) {
         ItemRequest itemRequest = getItemRequestOrThrow(itemRequestId, Actions.TO_VIEW);
-        return ItemRequestMapper.toDto(itemRequest, getItemRequestCreateDto(itemRequestId));
+
+        List<Item> items = itemRepository.findAllByRequestIdOrderByIdDesc(itemRequestId);
+
+        if (!items.isEmpty()) {
+            log.debug("Last created item: {} with name: {}",
+                    items.get(0).getId(), items.get(0).getName());
+        }
+
+        List<ItemRequestCreateDto> itemDtos = items.stream()
+                .map(item -> {
+                    log.debug("Item {} has name: {}", item.getId(), item.getName());
+                    return ItemMapper.toItemRequestCreateDto(item);
+                })
+                .collect(Collectors.toList());
+
+        return ItemRequestDto.builder()
+                .id(itemRequest.getId())
+                .description(itemRequest.getDescription())
+                .requestorId(itemRequest.getRequestor().getId())
+                .created(itemRequest.getCreated())
+                .items(itemDtos)
+                .build();
     }
 
     @Override
-    @Transactional(readOnly = true)
     public Collection<ItemRequestDto> getAllItemRequestsFromRequestor(long requesterId) {
-        log.debug("Checking user {}", requesterId);
-        getUserOrThrow(requesterId);
+        User user = userRepository.findById(requesterId)
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
-        log.debug("Finding requests for user {}", requesterId);
-        List<ItemRequest> requests = requestRepository.findAllByRequestorId(requesterId);
-
-        log.debug("Found {} requests", requests.size());
-        List<Long> requestIds = requests.stream().map(ItemRequest::getId).toList();
-
-        log.debug("Finding items for requests");
-        List<Item> items = itemRepository.findAllByRequestIdIn(requestIds);
-
-        return requests.stream()
-                .map(request -> {
-                    List<ItemRequestCreateDto> requestItems = items.stream()
-                            .filter(item -> request.getId().equals(item.getRequest().getId()))
-                            .map(ItemMapper::toItemRequestCreateDto)
-                            .toList();
-                    return ItemRequestMapper.toDto(request, requestItems);
-                })
+        return requestRepository.findAllByRequestorOrderByCreatedDesc(user).stream()
+                .map(request -> ItemRequestMapper.toDto(request,
+                        itemRepository.findAllByRequestId(request.getId()).stream()
+                                .map(ItemMapper::toItemRequestCreateDto)
+                                .toList()))
                 .toList();
     }
 
@@ -112,7 +108,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     public ItemRequestDto updateItemRequest(CreateItemRequestDto itemReqDtoForUpdate, long userId, long itemReqId) {
         ItemRequest itemReq = getItemRequestOrThrow(itemReqId, Actions.TO_UPDATE);
 
-        if (!itemReq.getRequestorId().equals(userId)) {
+        if (!itemReq.getRequestor().getId().equals(userId)) {
             throw new AccessError("У вас нет права на редактирование");
         }
 
@@ -128,7 +124,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     public void deleteItemRequest(long itemRequestId, long userId) {
         ItemRequest itemRequest = getItemRequestOrThrow(itemRequestId, Actions.TO_DELETE);
 
-        if (itemRequest.getRequestorId() != userId) {
+        if (itemRequest.getRequestor().getId() != userId) {
             throw new AccessError("У вас нет права на удаление");
         }
 
@@ -153,11 +149,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
 
     private List<ItemRequestCreateDto> getItemRequestCreateDto(long requestId) {
         return itemRepository.findAllByRequestId(requestId).stream()
-                .map(item -> {
-                    if (item == null) return null;
-                    return ItemMapper.toItemRequestCreateDto(item);
-                })
-                .filter(Objects::nonNull)
+                .map(ItemMapper::toItemRequestCreateDto)
                 .toList();
     }
 

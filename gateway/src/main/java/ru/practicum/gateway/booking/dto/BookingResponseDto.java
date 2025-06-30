@@ -3,9 +3,9 @@ package ru.practicum.gateway.booking.dto;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.FutureOrPresent;
 import lombok.Data;
-import ru.practicum.shareit.booking.state.BookingStatus;
-import ru.practicum.shareit.item.dto.ItemDto;
-import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.gateway.Item.dto.ItemDto;
+import ru.practicum.gateway.user.dto.UserDto;
+
 import java.time.LocalDateTime;
 
 @Data
