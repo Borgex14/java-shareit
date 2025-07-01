@@ -7,7 +7,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import ru.practicum.shareit.booking.dto.BookingShortDto;
-import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.user.dto.UserDto;
 
 import java.util.List;
@@ -27,7 +26,6 @@ public class ItemDto {
     @NotNull(message = "Available status must be specified")
     private Boolean available;
     private UserDto owner;
-    private ItemRequest request;
     private Long requestId;
     private BookingShortDto lastBooking;
     private BookingShortDto nextBooking;

@@ -23,7 +23,7 @@ public class BookingResponseDtoJsonTest {
     @BeforeEach
     void setup() {
         ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule()); // Регистрируем модуль для работы с Java 8 датами
+        objectMapper.registerModule(new JavaTimeModule());
         JacksonTester.initFields(this, objectMapper);
     }
 

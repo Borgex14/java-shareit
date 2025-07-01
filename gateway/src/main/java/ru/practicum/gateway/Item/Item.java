@@ -3,7 +3,6 @@ package ru.practicum.gateway.Item;
 import jakarta.persistence.*;
 import lombok.*;
 import ru.practicum.gateway.user.User;
-import ru.practicum.gateway.request.ItemRequest;
 
 @Entity
 @Table(name = "items")
@@ -30,7 +29,6 @@ public class Item {
     @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "request_id")
-    private ItemRequest request;
+    @Column(name = "request_id")
+    private Long requestId;
 }

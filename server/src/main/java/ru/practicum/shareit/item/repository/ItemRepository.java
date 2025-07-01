@@ -18,15 +18,16 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
             "AND i.available = true")
     List<Item> searchAvailableItems(String text);
 
-    @Query("SELECT i FROM Item i WHERE i.request.id = :requestId")
+    @Query("SELECT i FROM Item i WHERE i.requestId = :requestId")
     List<Item> findAllByRequestId(@Param("requestId") long requestId);
 
-    List<Item> findAllByRequestIdIn(List<Long> requestId);
+    @Query("SELECT i FROM Item i WHERE i.requestId IN :requestIds")
+    List<Item> findAllByRequestIdIn(@Param("requestIds") List<Long> requestIds);
 
-    @Query("SELECT i FROM Item i WHERE i.request.id = :requestId ORDER BY i.id DESC")
+    @Query("SELECT i FROM Item i WHERE i.requestId = :requestId ORDER BY i.id DESC")
     List<Item> findAllByRequestIdOrderByIdDesc(@Param("requestId") long requestId);
 
-    @Query("SELECT i FROM Item i WHERE i.request.id = :requestId AND i.owner.id = :ownerId ORDER BY i.id DESC")
+    @Query("SELECT i FROM Item i WHERE i.requestId = :requestId AND i.owner.id = :ownerId ORDER BY i.id DESC")
     List<Item> findAllByRequestIdAndOwner(@Param("requestId") long requestId,
                                           @Param("ownerId") long ownerId);
 }

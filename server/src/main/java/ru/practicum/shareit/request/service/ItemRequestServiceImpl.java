@@ -170,7 +170,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
 
     private List<ItemRequestCreateDto> getItemRequestCreateDtoWithOwner(long requestId, List<Item> allItems) {
         List<Item> itemsRequestCreate = allItems.stream()
-                .filter(item -> item.getRequest().getId() == requestId)
+                .filter(item -> item.getRequestId() == requestId)
                 .toList();
 
         allItems.removeAll(itemsRequestCreate);

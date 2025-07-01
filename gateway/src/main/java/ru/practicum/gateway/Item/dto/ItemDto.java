@@ -7,7 +7,6 @@ import lombok.Builder;
 import lombok.Data;
 import ru.practicum.gateway.booking.dto.BookingShortDto;
 import ru.practicum.gateway.commentDto.CommentDto;
-import ru.practicum.gateway.request.ItemRequest;
 import ru.practicum.gateway.user.dto.UserDto;
 
 import java.util.List;
@@ -27,7 +26,6 @@ public class ItemDto {
     @NotNull(message = "Available status must be specified")
     private Boolean available;
     private UserDto owner;
-    private ItemRequest request;
     private Long requestId;
     private BookingShortDto lastBooking;
     private BookingShortDto nextBooking;

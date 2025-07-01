@@ -17,8 +17,9 @@ import ru.practicum.shareit.item.mapper.ItemMapper;
 import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.ItemRepository;
-import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.request.repository.ItemRequestRepository;
+import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 import ru.practicum.shareit.booking.state.BookingStatus;
@@ -44,15 +45,17 @@ public class ItemServiceImpl implements ItemService {
     private final CommentRepository commentRepository;
     private final ItemRequestRepository requestRepository;
     private final ItemMapper itemMapper;
+    private final UserMapper userMapper;
 
     @Autowired
-    public ItemServiceImpl(ItemRepository itemRepository, UserRepository userRepository, BookingRepository bookingRepository, CommentRepository commentRepository, ItemRequestRepository itemRequestRepository, ItemRequestRepository requestRepository, ItemMapper itemMapper) {
+    public ItemServiceImpl(ItemRepository itemRepository, UserRepository userRepository, BookingRepository bookingRepository, CommentRepository commentRepository, ItemRequestRepository itemRequestRepository, ItemRequestRepository requestRepository, ItemMapper itemMapper, UserMapper userMapper) {
         this.itemRepository = itemRepository;
         this.userRepository = userRepository;
         this.bookingRepository = bookingRepository;
         this.commentRepository = commentRepository;
         this.requestRepository = requestRepository;
         this.itemMapper = itemMapper;
+        this.userMapper = userMapper;
     }
 
     private Item findItemById(Long itemId) {
@@ -68,22 +71,15 @@ public class ItemServiceImpl implements ItemService {
         User owner = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
-        Boolean available = itemDto.getAvailable() != null ? itemDto.getAvailable() : true;
-
-        Item item = Item.builder()
-                .name(itemDto.getName())
-                .description(itemDto.getDescription())
-                .available(available)
-                .owner(owner)
-                .build();
-
         if (itemDto.getRequestId() != null) {
-            ItemRequest request = requestRepository.findById(itemDto.getRequestId())
+            requestRepository.findById(itemDto.getRequestId())
                     .orElseThrow(() -> new NotFoundException("Request not found"));
-            item.setRequest(request);
         }
 
-        Item savedItem = itemRepository.save(item);
+        UserDto ownerDto = userMapper.toDto(owner);
+        itemDto.setOwner(ownerDto);
+
+        Item savedItem = itemRepository.save(itemMapper.toEntity(itemDto));
         log.info("Saved item with ownerId: {}", savedItem.getOwner().getId());
 
         ItemDto result = itemMapper.toFullDto(savedItem, null, null, Collections.emptyList());

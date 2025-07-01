@@ -1,10 +1,7 @@
 package ru.practicum.shareit.request.model;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import ru.practicum.shareit.item.model.Item;
@@ -36,7 +33,7 @@ public class ItemRequest {
     @CreationTimestamp
     private LocalDateTime created;
 
-    @OneToMany(mappedBy = "request", fetch = FetchType.LAZY)
-    @ToString.Exclude
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinColumn(name = "request_id")
     private List<Item> items;
 }

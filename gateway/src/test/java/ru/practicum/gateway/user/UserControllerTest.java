@@ -27,7 +27,6 @@ public class UserControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    // Test GET /users
     @Test
     void getAllUsers_ShouldCallClientAndReturnOk() throws Exception {
         ResponseEntity<Object> expectedResponse = ResponseEntity.ok().build();
@@ -37,7 +36,6 @@ public class UserControllerTest {
                 .andExpect(status().isOk());
     }
 
-    // Test GET /users/{userId}
     @Test
     void getUserById_WithValidId_ShouldReturnOk() throws Exception {
         long userId = 1L;
@@ -48,7 +46,6 @@ public class UserControllerTest {
                 .andExpect(status().isOk());
     }
 
-    // Test DELETE /users/{userId}
     @Test
     void deleteUser_ShouldCallClientAndReturnResponse() throws Exception {
         long userId = 1L;
@@ -59,7 +56,6 @@ public class UserControllerTest {
                 .andExpect(status().isNoContent());
     }
 
-    // Test POST /users with valid data
     @Test
     void createUser_WithValidData_ShouldReturnCreated() throws Exception {
         UserCreateDto userDto = new UserCreateDto();
@@ -75,7 +71,6 @@ public class UserControllerTest {
                 .andExpect(status().isCreated());
     }
 
-    // Test PATCH /users/{userId}
     @Test
     void updateUser_ShouldCallClientAndReturnOk() throws Exception {
         long userId = 1L;

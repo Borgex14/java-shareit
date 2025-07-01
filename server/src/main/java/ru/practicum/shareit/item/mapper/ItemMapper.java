@@ -2,8 +2,6 @@ package ru.practicum.shareit.item.mapper;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.Named;
-import org.mapstruct.ReportingPolicy;
 import ru.practicum.shareit.booking.dto.BookingShortDto;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.item.dto.CommentDto;
@@ -24,7 +22,7 @@ public interface ItemMapper {
     @Mapping(target = "nextBooking", source = "nextBooking")
     @Mapping(target = "comments", source = "comments")
     @Mapping(target = "owner", source = "item.owner")
-    @Mapping(target = "requestId", source = "item.request.id")
+    @Mapping(target = "requestId", source = "item.requestId")
     ItemDto toFullDto(Item item, BookingShortDto lastBooking,
                       BookingShortDto nextBooking, List<CommentDto> comments);
 
@@ -33,7 +31,6 @@ public interface ItemMapper {
     @Mapping(target = "description", source = "description")
     @Mapping(target = "available", source = "available")
     @Mapping(target = "owner", source = "owner")
-    @Mapping(target = "requestId", source = "request.id")
     ItemDto toSimpleDto(Item item);
 
     @Mapping(target = "id", source = "booking.id")
@@ -46,6 +43,8 @@ public interface ItemMapper {
     @Mapping(target = "name", source = "name")
     @Mapping(target = "description", source = "description")
     @Mapping(target = "available", source = "available")
+    @Mapping(target = "owner", source = "owner")
+    @Mapping(target = "requestId", source = "requestId")
     Item toEntity(ItemDto itemDto);
 
     @Mapping(target = "id", source = "id")
