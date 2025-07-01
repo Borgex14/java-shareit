@@ -32,6 +32,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     private final UserRepository userRepository;
     private final ItemRequestRepository requestRepository;
     private final ItemRepository itemRepository;
+    private final ItemMapper itemMapper;
 
     @Override
     @Transactional
@@ -59,7 +60,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
         return allRequests.stream()
                 .map(request -> ItemRequestMapper.toDto(
                         request,
-                        getItemRequestCreateDto(request.getId(), allItems)))
+                        getItemRequestCreateDtoWithOwner(request.getId(), allItems)))
                 .toList();
     }
 
@@ -69,16 +70,21 @@ public class ItemRequestServiceImpl implements ItemRequestService {
 
         List<Item> items = itemRepository.findAllByRequestIdOrderByIdDesc(itemRequestId);
 
+        items.forEach(item -> {
+            if (item.getOwner() == null) {
+                log.error("Item {} has no owner!", item.getId());
+            } else {
+                log.debug("Item {} owner: {}", item.getId(), item.getOwner().getId());
+            }
+        });
+
         if (!items.isEmpty()) {
             log.debug("Last created item: {} with name: {}",
                     items.get(0).getId(), items.get(0).getName());
         }
 
         List<ItemRequestCreateDto> itemDtos = items.stream()
-                .map(item -> {
-                    log.debug("Item {} has name: {}", item.getId(), item.getName());
-                    return ItemMapper.toItemRequestCreateDto(item);
-                })
+                .map(itemMapper::toItemRequestCreateDto)
                 .collect(Collectors.toList());
 
         return ItemRequestDto.builder()
@@ -96,10 +102,19 @@ public class ItemRequestServiceImpl implements ItemRequestService {
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
         return requestRepository.findAllByRequestorOrderByCreatedDesc(user).stream()
-                .map(request -> ItemRequestMapper.toDto(request,
-                        itemRepository.findAllByRequestId(request.getId()).stream()
-                                .map(ItemMapper::toItemRequestCreateDto)
-                                .toList()))
+                .map(request -> {
+                    List<ItemRequestCreateDto> items = itemRepository.findAllByRequestId(request.getId()).stream()
+                            .map(itemMapper::toItemRequestCreateDto)
+                            .collect(Collectors.toList());
+
+                    items.forEach(dto -> {
+                        if (dto.getOwnerId() == null) {
+                            log.warn("Item {} has no ownerId in mapping result!", dto.getId());
+                        }
+                    });
+
+                    return ItemRequestMapper.toDto(request, items);
+                })
                 .toList();
     }
 
@@ -117,7 +132,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
             requestRepository.save(itemReq);
         }
 
-        return ItemRequestMapper.toDto(itemReq, getItemRequestCreateDto(itemReqId));
+        return ItemRequestMapper.toDto(itemReq, getItemRequestCreateDtoWithOwner(itemReqId));
     }
 
     @Override
@@ -147,13 +162,13 @@ public class ItemRequestServiceImpl implements ItemRequestService {
                 });
     }
 
-    private List<ItemRequestCreateDto> getItemRequestCreateDto(long requestId) {
+    private List<ItemRequestCreateDto> getItemRequestCreateDtoWithOwner(long requestId) {
         return itemRepository.findAllByRequestId(requestId).stream()
-                .map(ItemMapper::toItemRequestCreateDto)
+                .map(itemMapper::toItemRequestCreateDto)
                 .toList();
     }
 
-    private List<ItemRequestCreateDto> getItemRequestCreateDto(long requestId, List<Item> allItems) {
+    private List<ItemRequestCreateDto> getItemRequestCreateDtoWithOwner(long requestId, List<Item> allItems) {
         List<Item> itemsRequestCreate = allItems.stream()
                 .filter(item -> item.getRequest().getId() == requestId)
                 .toList();
@@ -161,7 +176,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
         allItems.removeAll(itemsRequestCreate);
 
         return itemsRequestCreate.stream()
-                .map(ItemMapper::toItemRequestCreateDto)
+                .map(itemMapper::toItemRequestCreateDto)
                 .toList();
     }
 

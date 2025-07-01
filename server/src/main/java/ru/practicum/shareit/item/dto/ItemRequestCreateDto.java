@@ -16,5 +16,5 @@ public class ItemRequestCreateDto {
     @NotBlank
     private String name;
 
-    private long ownerId;
+    private Long ownerId;
 }

@@ -24,7 +24,7 @@ public class ItemDto {
     @NotBlank
     private String description;
 
-    @NotNull
+    @NotNull(message = "Available status must be specified")
     private Boolean available;
     private UserDto owner;
     private ItemRequest request;

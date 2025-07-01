@@ -63,16 +63,19 @@ public class ItemServiceImpl implements ItemService {
     @Override
     @Transactional
     public ItemDto addItem(Long userId, ItemDto itemDto) {
+        log.info("Adding item for user {}, data: {}", userId, itemDto);
         validateItemData(itemDto);
-
         User owner = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
-        Item item = new Item();
-        item.setName(itemDto.getName());
-        item.setDescription(itemDto.getDescription());
-        item.setAvailable(itemDto.getAvailable());
-        item.setOwner(owner); // Устанавливаем владельца
+        Boolean available = itemDto.getAvailable() != null ? itemDto.getAvailable() : true;
+
+        Item item = Item.builder()
+                .name(itemDto.getName())
+                .description(itemDto.getDescription())
+                .available(available)
+                .owner(owner)
+                .build();
 
         if (itemDto.getRequestId() != null) {
             ItemRequest request = requestRepository.findById(itemDto.getRequestId())
@@ -81,8 +84,12 @@ public class ItemServiceImpl implements ItemService {
         }
 
         Item savedItem = itemRepository.save(item);
+        log.info("Saved item with ownerId: {}", savedItem.getOwner().getId());
 
-        return itemMapper.toFullDto(savedItem, null, null, Collections.emptyList());
+        ItemDto result = itemMapper.toFullDto(savedItem, null, null, Collections.emptyList());
+        log.info("Mapped ItemDto owner: {}", result.getOwner());
+
+        return result;
     }
 
     private Item createItem(Item item, Long ownerId) {
