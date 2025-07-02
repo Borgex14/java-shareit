@@ -14,6 +14,7 @@
     <properties>
         <!-- Убедитесь, что версии Java совпадают в properties и compiler plugin -->
         <java.version>21</java.version>
+        <spring-boot.version>3.3.2</spring-boot.version>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -76,6 +77,11 @@
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <!-- Lombok -->
@@ -145,7 +151,7 @@
                         <path>
                             <groupId>org.springframework.boot</groupId>
                             <artifactId>spring-boot-configuration-processor</artifactId>
-                            <version>${project.parent.version}</version>
+                            <version>${spring-boot.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>

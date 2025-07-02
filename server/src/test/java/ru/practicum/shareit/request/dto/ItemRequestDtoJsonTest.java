@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.json.JacksonTester;
 import org.springframework.boot.test.json.JsonContent;
+import org.springframework.test.context.ActiveProfiles;
 import ru.practicum.shareit.item.dto.ItemRequestCreateDto;
 
 import java.io.IOException;
@@ -16,6 +17,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@ActiveProfiles("test")
 public class ItemRequestDtoJsonTest {
 
     private JacksonTester<ItemRequestDto> json;
