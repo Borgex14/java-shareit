@@ -18,6 +18,10 @@
 
 	<properties>
 		<java.version>21</java.version>
+		<lombok.version>1.18.32</lombok.version> <!-- Добавить -->
+		<mapstruct.version>1.5.5.Final</mapstruct.version> <!-- Добавить -->
+		<maven.compiler.source>${java.version}</maven.compiler.source> <!-- Добавить -->
+		<maven.compiler.target>${java.version}</maven.compiler.target> <!-- Добавить -->
 	</properties>
 	<dependencies>
 		<dependency>
@@ -26,20 +30,20 @@
 			<version>10.3</version>
 		</dependency>
 		<dependency>
-			<groupId>org.mapstruct</groupId>
-			<artifactId>mapstruct</artifactId>
-			<version>1.5.5.Final</version>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>${lombok.version}</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.mapstruct</groupId>
-			<artifactId>mapstruct-processor</artifactId>
-			<version>1.5.5.Final</version>
-			<scope>provided</scope>
+			<artifactId>mapstruct</artifactId>
+			<version>${mapstruct.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
-			<scope>runtime</scope>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 	<modules>
@@ -69,11 +73,23 @@
 					<artifactId>maven-compiler-plugin</artifactId>
 					<version>3.10.1</version>
 					<configuration>
+						<source>${java.version}</source>
+						<target>${java.version}</target>
 						<annotationProcessorPaths>
 							<path>
 								<groupId>org.projectlombok</groupId>
 								<artifactId>lombok</artifactId>
 								<version>${lombok.version}</version>
+							</path>
+							<path>
+								<groupId>org.projectlombok</groupId>
+								<artifactId>lombok-mapstruct-binding</artifactId>
+								<version>${lombok.version}</version>
+							</path>
+							<path>
+								<groupId>org.mapstruct</groupId>
+								<artifactId>mapstruct-processor</artifactId>
+								<version>${mapstruct.version}</version>
 							</path>
 						</annotationProcessorPaths>
 					</configuration>

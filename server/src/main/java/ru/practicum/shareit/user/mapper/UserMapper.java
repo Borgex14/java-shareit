@@ -6,7 +6,7 @@ import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.dto.UserCreateDto;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {})
 public interface UserMapper {
     @Mapping(target = "id", source = "id")
     @Mapping(target = "name", source = "name")
