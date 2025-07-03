@@ -11,7 +11,7 @@ public class UserMappingUtils {
     private static UserMapper userMapper;
 
     @Autowired
-    public UserMappingUtils(UserMapper userMapper) {
+    public void setUserMapper(UserMapper userMapper) {
         UserMappingUtils.userMapper = userMapper;
     }
 
