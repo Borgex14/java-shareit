@@ -1,6 +1,7 @@
 package ru.practicum.shareit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,15 +36,24 @@ public class UserControllerIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    private User user;
+    private User user1;
+    private User user2;
     private UserDto userDto;
     private UserCreateDto userCreateDto;
 
+    @Autowired
+    private EntityManager entityManager;
+
     @BeforeEach
     void setUp() {
-        user = userRepository.save(User.builder()
-                .name("Test User")
-                .email("test@example.com")
+        user1 = userRepository.save(User.builder()
+                .name("Test User 1")
+                .email("test1@example.com")
+                .build());
+
+        user2 = userRepository.save(User.builder()
+                .name("Test User 2")
+                .email("test2@example.com")
                 .build());
 
         userDto = new UserDto();
@@ -57,6 +67,7 @@ public class UserControllerIntegrationTest {
 
     @AfterEach
     void tearDown() {
+        entityManager.clear();
         userRepository.deleteAll();
     }
 
@@ -67,41 +78,51 @@ public class UserControllerIntegrationTest {
                         .content(objectMapper.writeValueAsString(userDto)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id", notNullValue()))
-                .andExpect(jsonPath("$.name", is("New User")));
+                .andExpect(jsonPath("$.name", is(userDto.getName())))
+                .andExpect(jsonPath("$.email", is(userDto.getEmail())));
+    }
+
+    @Test
+    void createUser_shouldReturnConflictWhenEmailExists() throws Exception {
+        userDto.setEmail(user1.getEmail());
+        mockMvc.perform(post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(userDto)))
+                .andExpect(status().isConflict());
+
+        entityManager.clear();
     }
 
     @Test
     void updateUser_shouldUpdateExistingUser() throws Exception {
-        mockMvc.perform(patch("/users/{userId}", user.getId())
+        mockMvc.perform(patch("/users/{userId}", user1.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(userCreateDto)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name", is("Updated User")));
+                .andExpect(jsonPath("$.name", is(userCreateDto.getName())))
+                .andExpect(jsonPath("$.email", is(userCreateDto.getEmail())));
     }
 
     @Test
-    void getUser_shouldReturnUser() throws Exception {
-        mockMvc.perform(get("/users/{userId}", user.getId()))
+    void updateUser_shouldUpdateOnlyName() throws Exception {
+        userCreateDto.setEmail(null);
+        mockMvc.perform(patch("/users/{userId}", user1.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(userCreateDto)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id", is(user.getId().intValue())))
-                .andExpect(jsonPath("$.name", is("Test User")));
+                .andExpect(jsonPath("$.name", is(userCreateDto.getName())))
+                .andExpect(jsonPath("$.email", is(user1.getEmail())));
     }
 
     @Test
-    void getAllUsers_shouldReturnUsers() throws Exception {
-        mockMvc.perform(get("/users"))
+    void updateUser_shouldUpdateOnlyEmail() throws Exception {
+        userCreateDto.setName(null);
+        mockMvc.perform(patch("/users/{userId}", user1.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(userCreateDto)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].id", is(user.getId().intValue())));
-    }
-
-    @Test
-    void deleteUser_shouldDeleteUser() throws Exception {
-        mockMvc.perform(delete("/users/{userId}", user.getId()))
-                .andExpect(status().isNoContent());
-
-        mockMvc.perform(get("/users/{userId}", user.getId()))
-                .andExpect(status().isNotFound());
+                .andExpect(jsonPath("$.name", is(user1.getName())))
+                .andExpect(jsonPath("$.email", is(userCreateDto.getEmail())));
     }
 
     @Test
@@ -109,6 +130,53 @@ public class UserControllerIntegrationTest {
         mockMvc.perform(patch("/users/999")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(userCreateDto)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getUser_shouldReturnUser() throws Exception {
+        mockMvc.perform(get("/users/{userId}", user1.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(user1.getId().intValue())))
+                .andExpect(jsonPath("$.name", is(user1.getName())))
+                .andExpect(jsonPath("$.email", is(user1.getEmail())));
+    }
+
+    @Test
+    void getUser_shouldReturnNotFoundForNonExistingUser() throws Exception {
+        mockMvc.perform(get("/users/999"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getAllUsers_shouldReturnUsers() throws Exception {
+        mockMvc.perform(get("/users"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].id", is(user1.getId().intValue())))
+                .andExpect(jsonPath("$[1].id", is(user2.getId().intValue())));
+    }
+
+    @Test
+    void getAllUsers_shouldReturnEmptyListWhenNoUsers() throws Exception {
+        userRepository.deleteAll();
+        mockMvc.perform(get("/users"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", empty()));
+    }
+
+    @Test
+    void deleteUser_shouldDeleteUser() throws Exception {
+        mockMvc.perform(delete("/users/{userId}", user1.getId()))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/users/{userId}", user1.getId()))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deleteUser_shouldReturnNotFoundForNonExistingUser() throws Exception {
+        mockMvc.perform(delete("/users/999"))
                 .andExpect(status().isNotFound());
     }
 }
