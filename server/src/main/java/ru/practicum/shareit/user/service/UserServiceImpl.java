@@ -21,11 +21,13 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final UserMappingUtils userMappingUtils;
 
     @Autowired
-    public UserServiceImpl(UserRepository userRepository, UserMapper userMapper) {
+    public UserServiceImpl(UserRepository userRepository, UserMapper userMapper, UserMappingUtils userMappingUtils) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
+        this.userMappingUtils = userMappingUtils;
     }
 
     @Override
@@ -33,7 +35,7 @@ public class UserServiceImpl implements UserService {
     public UserDto createUser(UserCreateDto createDto) {
         User user = userMapper.fromCreateDto(createDto);
         User createdUser = userRepository.save(user);
-        return UserMappingUtils.toDto(createdUser);
+        return userMappingUtils.toDto(createdUser);
     }
 
     @Override
@@ -53,20 +55,20 @@ public class UserServiceImpl implements UserService {
         }
 
         User updatedUser = userRepository.save(existingUser);
-        return UserMappingUtils.toDto(updatedUser);
+        return userMappingUtils.toDto(updatedUser);
     }
 
     @Override
     public UserDto getUser(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id " + userId + " не найден"));
-        return UserMappingUtils.toDto(user);
+        return userMappingUtils.toDto(user);
     }
 
     @Override
     public List<UserDto> getAllUsers() {
         return userRepository.findAll().stream()
-                .map(UserMappingUtils::toDto)
+                .map(userMappingUtils::toDto)
                 .collect(Collectors.toList());
     }
 

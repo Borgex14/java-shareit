@@ -8,18 +8,18 @@ import ru.practicum.shareit.user.model.User;
 
 @Component
 public class UserMappingUtils {
-    private static UserMapper userMapper;
+    private final UserMapper userMapper;
 
     @Autowired
-    public void setUserMapper(UserMapper userMapper) {
-        UserMappingUtils.userMapper = userMapper;
+    public UserMappingUtils(UserMapper userMapper) {
+        this.userMapper = userMapper;
     }
 
-    public static UserDto toDto(User user) {
+    public UserDto toDto(User user) {
         return userMapper.toDto(user);
     }
 
-    public static User fromCreateDto(UserCreateDto createDto) {
+    public User fromCreateDto(UserCreateDto createDto) {
         return userMapper.fromCreateDto(createDto);
     }
 }
