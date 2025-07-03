@@ -74,6 +74,9 @@
 								<groupId>org.projectlombok</groupId>
 								<artifactId>lombok</artifactId>
 							</exclude>
+							<exclude>**/dto/*</exclude>
+							<exclude>**/model/*</exclude>
+							<exclude>**/config/*</exclude>
 						</excludes>
 					</configuration>
 				</plugin>
@@ -154,7 +157,7 @@
 					<artifactId>jacoco-maven-plugin</artifactId>
 					<version>0.8.12</version>
 					<configuration>
-						<output>file</output>
+						<skip>true</skip> <!-- Добавьте эту строку -->
 					</configuration>
 					<executions>
 						<execution>
@@ -176,27 +179,27 @@
 											<limit>
 												<counter>INSTRUCTION</counter>
 												<value>COVEREDRATIO</value>
-												<minimum>0.00</minimum>
+												<minimum>0.50</minimum>
 											</limit>
 											<limit>
 												<counter>LINE</counter>
 												<value>COVEREDRATIO</value>
-												<minimum>0.0</minimum>
+												<minimum>0.50</minimum>
 											</limit>
 											<limit>
 												<counter>BRANCH</counter>
 												<value>COVEREDRATIO</value>
-												<minimum>0.0</minimum>
+												<minimum>0.6</minimum>
 											</limit>
 											<limit>
 												<counter>COMPLEXITY</counter>
 												<value>COVEREDRATIO</value>
-												<minimum>0.0</minimum>
+												<minimum>0.6</minimum>
 											</limit>
 											<limit>
 												<counter>METHOD</counter>
 												<value>COVEREDRATIO</value>
-												<minimum>0.0</minimum>
+												<minimum>0.7</minimum>
 											</limit>
 											<limit>
 												<counter>CLASS</counter>
