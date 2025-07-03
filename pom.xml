@@ -176,7 +176,12 @@
 											<limit>
 												<counter>INSTRUCTION</counter>
 												<value>COVEREDRATIO</value>
-												<minimum>0.00</minimum>
+												<minimum>0.01</minimum>
+											</limit>
+											<limit>
+												<counter>INSTRUCTION</counter>
+												<value>COVEREDRATIO</value>
+												<minimum>0.00</minimum> <!-- Установите ваш желаемый минимум -->
 											</limit>
 											<limit>
 												<counter>LINE</counter>
