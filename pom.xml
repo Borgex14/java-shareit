@@ -74,9 +74,6 @@
 								<groupId>org.projectlombok</groupId>
 								<artifactId>lombok</artifactId>
 							</exclude>
-							<exclude>**/dto/*</exclude>
-							<exclude>**/model/*</exclude>
-							<exclude>**/config/*</exclude>
 						</excludes>
 					</configuration>
 				</plugin>
