@@ -124,6 +124,11 @@ public class ItemServiceImpl implements ItemService {
                 .build();
 
         Comment savedComment = commentRepository.save(comment);
+        log.info("Comment saved with ID: {}, for item ID: {}", savedComment.getId(), itemId);
+
+        boolean exists = commentRepository.existsById(savedComment.getId());
+        log.info("Comment exists in DB: {}", exists);
+
         return CommentMapper.mapCommentToDto(savedComment);
     }
 
@@ -141,11 +146,17 @@ public class ItemServiceImpl implements ItemService {
         List<Booking> bookings = bookingRepository
                 .findByBookerIdAndItemIdAndStatusOrderByStartDesc(bookerId, itemId, BookingStatus.APPROVED);
 
+        log.info("Found bookings for user {} and item {}: {}", bookerId, itemId, bookings);
+
         boolean canComment = bookings.stream()
-                .anyMatch(booking -> booking.getEnd().isBefore(now));
+                .anyMatch(booking -> {
+                    boolean isPast = booking.getEnd().isBefore(now);
+                    log.info("Booking {} end {} is before now {}: {}",
+                            booking.getId(), booking.getEnd(), now, isPast);
+                    return isPast;
+                });
 
         if (!canComment) {
-            log.warn("User {} cannot comment item {} - no completed bookings found", bookerId, itemId);
             throw new ValidationException("You can only comment items you've actually booked in the past");
         }
     }
@@ -214,7 +225,7 @@ public class ItemServiceImpl implements ItemService {
         Item item = findItemById(itemId);
         LocalDateTime now = LocalDateTime.now();
 
-        List<CommentDto> comments = commentRepository.findByItemId(itemId).stream()
+        List<CommentDto> comments = commentRepository.findByItemIdWithAuthor(itemId).stream()
                 .map(CommentMapper::mapCommentToDto)
                 .collect(Collectors.toList());
 
