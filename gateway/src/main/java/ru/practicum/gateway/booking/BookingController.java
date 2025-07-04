@@ -8,6 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.gateway.booking.dto.BookingRequestDto;
+import ru.practicum.gateway.exception.InvalidDateTimeException;
+
 import java.time.LocalDateTime;
 
 @RestController
@@ -24,15 +26,13 @@ public class BookingController {
         LocalDateTime now = LocalDateTime.now();
 
         if (requestDto.getEnd().isBefore(requestDto.getStart())) {
-            throw new IllegalArgumentException("End date must be after start date");
+            throw new InvalidDateTimeException("End date must be after start date");
         }
-
         if (requestDto.getStart().isBefore(now)) {
-            throw new IllegalArgumentException("Start date must be in the future or present");
+            throw new InvalidDateTimeException("Start date must be in the future or present");
         }
-
         if (requestDto.getEnd().isBefore(now)) {
-            throw new IllegalArgumentException("End date must be in the future");
+            throw new InvalidDateTimeException("End date must be in the future");
         }
 
         return bookingClient.createBooking(userId, requestDto);

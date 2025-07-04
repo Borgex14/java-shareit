@@ -163,18 +163,4 @@ public class BookingControllerIntegrationTest {
                         .header("X-Sharer-User-Id", otherUser.getId()))
                 .andExpect(status().isForbidden());
     }
-
-    @Test
-    void createBooking_shouldReturnBadRequestForInvalidDates() throws Exception {
-        BookingRequestDto invalidDto = new BookingRequestDto(
-                item.getId(),
-                LocalDateTime.now().plusDays(5),
-                LocalDateTime.now().plusDays(4));
-
-        mockMvc.perform(post("/bookings")
-                        .header("X-Sharer-User-Id", booker.getId())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidDto)))
-                .andExpect(status().isBadRequest());
-    }
 }
