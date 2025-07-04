@@ -48,12 +48,10 @@ public class ItemRequestController {
 
     @GetMapping("/all")
     public ResponseEntity<Object> getAllRequests(
-            @RequestHeader(USER_ID_HEADER) long userId,
-            @RequestParam(defaultValue = "0") @PositiveOrZero int from,
-            @RequestParam(defaultValue = "10") @Positive int size) {
+            @RequestHeader(USER_ID_HEADER) long userId) {
 
-        log.info("Getting all requests for user {}, from {}, size {}", userId, from, size);
-        ResponseEntity<Object> response = itemRequestClient.getAllRequests(userId, from, size);
+        log.info("Getting all requests for user {}", userId);
+        ResponseEntity<Object> response = itemRequestClient.getAllRequests(userId);
         log.info("Response: {}", response.getBody());
         return response;
     }

@@ -1,6 +1,7 @@
 package ru.practicum.gateway.Item;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -8,6 +9,8 @@ import org.springframework.web.bind.annotation.*;
 import ru.practicum.gateway.Item.dto.ItemDto;
 import ru.practicum.gateway.commentDto.CommentDto;
 import ru.practicum.gateway.Item.dto.ItemCreateDto;
+
+import java.util.Collections;
 
 @RestController
 @RequestMapping("/items")
@@ -46,7 +49,10 @@ public class ItemController {
 
     @GetMapping("/search")
     public ResponseEntity<Object> searchItems(
-            @RequestParam String text) {
+            @RequestParam @NotBlank String text) {
+        if (text.isBlank()) {
+            return ResponseEntity.ok(Collections.emptyList());
+        }
         return itemClient.searchItems(text);
     }
 

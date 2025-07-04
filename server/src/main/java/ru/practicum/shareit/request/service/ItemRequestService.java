@@ -8,7 +8,7 @@ import java.util.Collection;
 public interface ItemRequestService {
     ItemRequestDto createItemRequest(CreateItemRequestDto itemRequestDto, long userId);
 
-    Collection<ItemRequestDto> getAllItemRequest();
+    Collection<ItemRequestDto> getAllItemRequest(long userId);
 
     ItemRequestDto getItemRequestById(long itemRequestId);
 

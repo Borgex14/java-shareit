@@ -11,6 +11,7 @@ import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.user.mapper.UserMapper;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring", uses = UserMapper.class)
 public interface ItemMapper {
@@ -51,4 +52,10 @@ public interface ItemMapper {
     @Mapping(target = "name", source = "name")
     @Mapping(target = "ownerId", expression = "java(item.getOwner() != null ? item.getOwner().getId() : null)")
     ItemRequestCreateDto toItemRequestCreateDto(Item item);
+
+    default List<ItemRequestCreateDto> toItemRequestCreateDtoList(List<Item> items) {
+        return items.stream()
+                .map(this::toItemRequestCreateDto)
+                .collect(Collectors.toList());
+    }
 }

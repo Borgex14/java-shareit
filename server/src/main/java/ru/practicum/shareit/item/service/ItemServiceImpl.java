@@ -68,12 +68,13 @@ public class ItemServiceImpl implements ItemService {
     public ItemDto addItem(Long userId, ItemDto itemDto) {
         log.info("Adding item for user {}, data: {}", userId, itemDto);
         validateItemData(itemDto);
-        User owner = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found"));
+        User owner = getUserOrThrow(userId);
 
         if (itemDto.getRequestId() != null) {
             requestRepository.findById(itemDto.getRequestId())
-                    .orElseThrow(() -> new NotFoundException("Request not found"));
+                    .orElseThrow(() -> new NotFoundException(
+                            String.format("Request with id %d not found", itemDto.getRequestId())
+                    ));
         }
 
         UserDto ownerDto = userMapper.toDto(owner);
@@ -311,10 +312,6 @@ public class ItemServiceImpl implements ItemService {
     @Override
     @Transactional(readOnly = true)
     public List<ItemDto> searchItems(String text) {
-        if (text == null || text.trim().isEmpty()) {
-            return Collections.emptyList();
-        }
-
         return itemRepository.searchAvailableItems(text.toLowerCase()).stream()
                 .map(item -> itemMapper.toFullDto(item, null, null, Collections.emptyList()))
                 .collect(Collectors.toList());

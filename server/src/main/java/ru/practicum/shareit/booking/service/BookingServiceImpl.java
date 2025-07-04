@@ -46,10 +46,6 @@ public class BookingServiceImpl implements BookingService {
 
         validateBookingCreation(userId, item, bookingRequestDto);
 
-        if (isTimeOverlaps(bookingRequestDto.getItemId(), bookingRequestDto.getStart(), bookingRequestDto.getEnd())) {
-            throw new ValidationException("Товар уже забронирован");
-        }
-
         Booking booking = new Booking();
         booking.setStart(bookingRequestDto.getStart());
         booking.setEnd(bookingRequestDto.getEnd());
@@ -78,7 +74,6 @@ public class BookingServiceImpl implements BookingService {
     }
 
     private void validateBookingCreation(Long userId, Item item, BookingRequestDto bookingRequestDto) {
-        LocalDateTime now = LocalDateTime.now();
 
         if (!item.getAvailable()) {
             throw new ItemNotAvailableException(item.getId());
@@ -88,17 +83,8 @@ public class BookingServiceImpl implements BookingService {
             throw new BookingOwnItemException();
         }
 
-        if (bookingRequestDto.getEnd().isBefore(bookingRequestDto.getStart()) ||
-                bookingRequestDto.getEnd().equals(bookingRequestDto.getStart())) {
-            throw new InvalidDateTimeException("End date must be after start date");
-        }
-
-        if (bookingRequestDto.getStart().isBefore(now)) {
-            throw new InvalidDateTimeException("Start date must be in the future");
-        }
-
-        if (bookingRequestDto.getEnd().isBefore(now)) {
-            throw new InvalidDateTimeException("End date must be in the future");
+        if (isTimeOverlaps(bookingRequestDto.getItemId(), bookingRequestDto.getStart(), bookingRequestDto.getEnd())) {
+            throw new ValidationException("Товар уже забронирован");
         }
     }
 

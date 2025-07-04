@@ -29,8 +29,9 @@ public class ItemRequestController {
     }
 
     @GetMapping("/all")
-    public Collection<ItemRequestDto> getAllItemRequests() {
-        return itemRequestService.getAllItemRequest();
+    public Collection<ItemRequestDto> getAllItemRequests(
+            @RequestHeader(USER_ID_HEADER) long userId) {
+        return itemRequestService.getAllItemRequest(userId);
     }
 
     @GetMapping("/{itemRequestId}")

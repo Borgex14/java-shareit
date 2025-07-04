@@ -37,30 +37,36 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     @Override
     @Transactional
     public ItemRequestDto createItemRequest(CreateItemRequestDto itemRequestDto, long userId) {
-        User requester = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User with id=" + userId + " not found"));
+        getUserOrThrow(userId);
+        User requester = userRepository.getReferenceById(userId);
 
-        ItemRequest itemRequest = ItemRequest.builder()
-                .description(itemRequestDto.getDescription())
-                .requestor(requester)
-                .created(LocalDateTime.now())
-                .build();
+        ItemRequest itemRequest = ItemRequestMapper.fromCreateDto(itemRequestDto, requester);
+        ItemRequest savedRequest = requestRepository.save(Objects.requireNonNull(itemRequest));
 
-        ItemRequest savedRequest = requestRepository.save(itemRequest);
         return ItemRequestMapper.toDto(savedRequest, Collections.emptyList());
     }
 
     @Override
-    public Collection<ItemRequestDto> getAllItemRequest() {
-        List<ItemRequest> allRequests = requestRepository.findAll();
-        List<Item> allItems = getItemsForListRequests(
-                allRequests.stream().map(ItemRequest::getId).toList()
-        );
+    public Collection<ItemRequestDto> getAllItemRequest(long userId) {
+        getUserOrThrow(userId);
+
+        List<ItemRequest> allRequests = requestRepository.findAllByRequestorIdNotOrderByCreatedDesc(userId);
+        List<Long> requestIds = allRequests.stream()
+                .map(ItemRequest::getId)
+                .collect(Collectors.toList());
+
+        List<Item> allItems = getItemsForListRequests(requestIds);
+
+        Map<Long, List<ItemRequestCreateDto>> itemsByRequestId = allItems.stream()
+                .collect(Collectors.groupingBy(
+                        Item::getRequestId,
+                        Collectors.mapping(itemMapper::toItemRequestCreateDto, Collectors.toList())
+                ));
 
         return allRequests.stream()
                 .map(request -> ItemRequestMapper.toDto(
                         request,
-                        getItemRequestCreateDtoWithOwner(request.getId(), allItems)))
+                        itemsByRequestId.getOrDefault(request.getId(), Collections.emptyList())))
                 .toList();
     }
 
@@ -83,36 +89,31 @@ public class ItemRequestServiceImpl implements ItemRequestService {
                     items.get(0).getId(), items.get(0).getName());
         }
 
-        List<ItemRequestCreateDto> itemDtos = items.stream()
-                .map(itemMapper::toItemRequestCreateDto)
-                .collect(Collectors.toList());
+        List<ItemRequestCreateDto> itemDtos = itemMapper.toItemRequestCreateDtoList(items);
 
-        return ItemRequestDto.builder()
-                .id(itemRequest.getId())
-                .description(itemRequest.getDescription())
-                .requestorId(itemRequest.getRequestor().getId())
-                .created(itemRequest.getCreated())
-                .items(itemDtos)
-                .build();
+        return ItemRequestMapper.toDto(itemRequest, itemDtos);
     }
 
     @Override
     public Collection<ItemRequestDto> getAllItemRequestsFromRequestor(long requesterId) {
-        User user = userRepository.findById(requesterId)
-                .orElseThrow(() -> new NotFoundException("User not found"));
+        getUserOrThrow(requesterId);
 
-        return requestRepository.findAllByRequestorOrderByCreatedDesc(user).stream()
+        List<ItemRequest> requests = requestRepository.findAllByRequestorIdOrderByCreatedDesc(requesterId);
+        List<Long> requestIds = requests.stream()
+                .map(ItemRequest::getId)
+                .collect(Collectors.toList());
+
+        Map<Long, List<ItemRequestCreateDto>> itemsByRequestId = getItemsByRequestId(requestIds);
+
+        return requests.stream()
                 .map(request -> {
-                    List<ItemRequestCreateDto> items = itemRepository.findAllByRequestId(request.getId()).stream()
-                            .map(itemMapper::toItemRequestCreateDto)
-                            .collect(Collectors.toList());
-
+                    List<ItemRequestCreateDto> items = itemsByRequestId.getOrDefault(request.getId(),
+                            Collections.emptyList());
                     items.forEach(dto -> {
                         if (dto.getOwnerId() == null) {
                             log.warn("Item {} has no ownerId in mapping result!", dto.getId());
                         }
                     });
-
                     return ItemRequestMapper.toDto(request, items);
                 })
                 .toList();
@@ -168,16 +169,16 @@ public class ItemRequestServiceImpl implements ItemRequestService {
                 .toList();
     }
 
-    private List<ItemRequestCreateDto> getItemRequestCreateDtoWithOwner(long requestId, List<Item> allItems) {
-        List<Item> itemsRequestCreate = allItems.stream()
-                .filter(item -> item.getRequestId() == requestId)
-                .toList();
+    private Map<Long, List<ItemRequestCreateDto>> getItemsByRequestId(List<Long> requestIds) {
+        if (requestIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
 
-        allItems.removeAll(itemsRequestCreate);
-
-        return itemsRequestCreate.stream()
-                .map(itemMapper::toItemRequestCreateDto)
-                .toList();
+        return itemRepository.findAllByRequestIdIn(requestIds).stream()
+                .collect(Collectors.groupingBy(
+                        Item::getRequestId,
+                        Collectors.mapping(itemMapper::toItemRequestCreateDto, Collectors.toList())
+                ));
     }
 
     private List<Item> getItemsForListRequests(List<Long> requestIds) {
